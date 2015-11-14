@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(calibration_test)
+project(lidar_calibration)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -10,6 +10,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
 )
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -71,6 +73,14 @@ find_package(catkin REQUIRED COMPONENTS
 #   sensor_msgs
 # )
 
+set(HEADERS
+  include/${PROJECT_NAME}/point_cloud_aggregator.h
+)
+
+set(SOURCES
+  src/point_cloud_aggregator.cpp
+)
+
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
 ################################################
@@ -101,10 +111,14 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES calibration_test
-#  CATKIN_DEPENDS pcl_conversions pcl_ros roscpp sensor_msgs
-#  DEPENDS system_lib
+  INCLUDE_DIRS include
+  LIBRARIES lidar_calibration
+  CATKIN_DEPENDS
+   pcl_conversions
+   pcl_ros 
+   roscpp 
+   sensor_msgs
+  DEPENDS system_lib
 )
 
 ###########
@@ -115,32 +129,38 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-# add_library(calibration_test
-#   src/${PROJECT_NAME}/calibration_test.cpp
-# )
+ add_library(lidar_calibration
+   ${HEADERS} ${SOURCES}
+ )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(calibration_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(lidar_calibration
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
 
 ## Declare a C++ executable
-# add_executable(calibration_test_node src/calibration_test_node.cpp)
-add_executable(example src/example.cpp)
+add_executable(capture_data_node src/capture_data_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(calibration_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(lidar_calibration_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(calibration_test_node
-#   ${catkin_LIBRARIES}
-# )
-target_link_libraries(example ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(capture_data_node
+  ${PROJECT_NAME} 
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
@@ -157,7 +177,7 @@ target_link_libraries(example ${catkin_LIBRARIES})
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS calibration_test calibration_test_node
+# install(TARGETS lidar_calibration lidar_calibration_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -182,7 +202,7 @@ target_link_libraries(example ${catkin_LIBRARIES})
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_calibration_test.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_lidar_calibration.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

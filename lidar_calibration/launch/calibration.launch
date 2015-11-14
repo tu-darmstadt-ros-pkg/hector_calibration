@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+
+<launch>
+  <node pkg="vigir_filtered_localized_scan_utils" type="scan_to_clouds_pub_node" name="scan_to_clouds_pub_node" output="screen">
+    <remap from="~/scan" to="/move_group/scan_filtered_localized"/> <!-- TODO adjust input -->
+    <remap from="~/cloud_out" to="/head_scan_cloud"/>
+    <remap from="~/cloud_self_filtered_out" to="/head_scan_cloud_filtered"/>
+  </node>
+  
+   <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="cloud_aggregator_node" output="screen">
+    <remap from="~/cloud" to="/head_scan_cloud"/>
+    <remap from="~/cloud_out" to="/head_half_scan"/>
+    <param name="target_frame" value="lidar_frame"/> <!-- TODO set target frame -->
+  </node>
+  
+</launch>
