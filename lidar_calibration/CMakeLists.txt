@@ -75,10 +75,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
 
 set(HEADERS
   include/${PROJECT_NAME}/point_cloud_aggregator.h
+  include/${PROJECT_NAME}/lidar_calibration.h
 )
 
 set(SOURCES
   src/point_cloud_aggregator.cpp
+  src/lidar_calibration.cpp
 )
 
 ################################################
