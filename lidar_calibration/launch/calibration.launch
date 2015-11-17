@@ -1,16 +1,21 @@
 <?xml version="1.0"?>
 
 <launch>
-  <node pkg="vigir_filtered_localized_scan_utils" type="scan_to_clouds_pub_node" name="scan_to_clouds_pub_node" output="screen">
-    <remap from="~/scan" to="/move_group/scan_filtered_localized"/> <!-- TODO adjust input -->
-    <remap from="~/cloud_out" to="/head_scan_cloud"/>
-    <remap from="~/cloud_self_filtered_out" to="/head_scan_cloud_filtered"/>
+  <include file="$(find hector_multisensor_head_driver)/launch/start_standalone_simulation.launch">
+      <arg name="world" value="$(find lidar_calibration)/worlds/calibration_test.world"/>
+   </include>
+   
+  <node pkg="vigir_laserscan_to_pointcloud" type="laserscan_to_pointcloud_node" name="scan_to_clouds_pub_node" output="screen">
+    <remap from="/scan" to="/head_lidar/scan"/>
+    <remap from="/scan_cloud" to="/head_lidar/scan_cloud"/>
   </node>
   
-   <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="cloud_aggregator_node" output="screen">
-    <remap from="~/cloud" to="/head_scan_cloud"/>
-    <remap from="~/cloud_out" to="/head_half_scan"/>
-    <param name="target_frame" value="lidar_frame"/> <!-- TODO set target frame -->
-  </node>
+ <node pkg="vigir_cloud_to_planar_scan" type="rotating_cloud_to_aggregated_cloud_node" name="cloud_aggregator_node" output="screen">
+    <remap from="/cloud" to="/head_lidar/scan_cloud"/>
+    <remap from="/cloud_out" to="/head_lidar/half_scan"/>
+    <param name="target_frame" value="head_lidar_actuator_frame"/>
+  </node> 
+  
+  <node pkg="tf" type="static_transform_publisher" name="head_lidar_actuator_frame_pub" args="0.061 0 0.134 0 0 0 1 head_link head_lidar_actuator_frame 100" />
   
 </launch>
