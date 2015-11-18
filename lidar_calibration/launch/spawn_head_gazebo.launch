@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+
+<launch>
+  
+  <!-- send the correct robot XML to param server -->
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find hector_multisensor_head_driver)/urdf/hector_multisensor_head_standalone.urdf.xacro'" />
+  
+  <!-- load modified URDF for gazebo -->   
+   <param name="robot_description_gazebo" command="cat $(find lidar_calibration)/urdf/hector_multisensor_head_with_error.urdf" />
+  
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node name="spawn_robot" pkg="gazebo_ros" type="spawn_model"
+    args="-param robot_description_gazebo
+          -urdf
+          -model robot_description_gazebo
+
+          -x 0
+          -y 0
+          -z 0
+          -R 0
+          -P 0
+          -Y 0"
+    respawn="false" output="screen" />
+
+  <!-- start robot state publisher -->
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen" >
+    <param name="publish_frequency" type="double" value="50.0" />
+    <remap from="joint_states" to="/thor_mang/joint_states" />
+  </node>
+ 
+  <node name="relay_head_image" pkg="topic_tools" type="relay" args="/head_cam/image_raw /camera/image_raw" />
+  <node name="relay_head_camera_info" pkg="topic_tools" type="relay" args="/head_cam/camera_info /camera/camera_info" />  
+
+</launch> 

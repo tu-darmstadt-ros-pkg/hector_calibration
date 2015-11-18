@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <launch>
-  <include file="$(find hector_multisensor_head_driver)/launch/start_standalone_simulation.launch">
+  <include file="$(find lidar_calibration)/launch/start_head_simulation.launch">
       <arg name="world" value="$(find lidar_calibration)/worlds/calibration_test.world"/>
    </include>
    
