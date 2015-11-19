@@ -1,12 +1,17 @@
 #ifndef LIDAR_CALIBRATION_H
 #define LIDAR_CALIBRATION_H
 
+// standard
+
 // pcl
 #include <pcl_ros/point_cloud.h>
 #include <pcl/common/transforms.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/search/kdtree.h>
 #include <pcl/surface/mls.h>
 
+// ros
+#include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 
 namespace hector_calibration {
@@ -22,6 +27,12 @@ public:
       yaw = 0;
     }
 
+    std::string to_string() {
+      std::stringstream ss;
+      ss << "[" << x << ", " << y << "; " << roll << ", " << pitch << ", " << yaw << "]";
+      return ss.str();
+    }
+
     double x;
     double y;
 
@@ -33,17 +44,21 @@ public:
   struct CalibrationOptions {
     CalibrationOptions() {
       max_iterations = 15;
-      for (unsigned int i = 0; i < 6; i++) {
+      for (unsigned int i = 0; i < 5; i++) {
         change_threshold[i] = 0;
       }
     }
 
     unsigned int max_iterations;
     double change_threshold[5];
+    Calibration init_calibration;
   };
 
+  LidarCalibration(const ros::NodeHandle& nh);
+
+  void set_options(CalibrationOptions options);
   bool load_options_from_param_server(const ros::NodeHandle& nh);
-  bool start_calibration();
+  bool start_calibration(std::string cloud_topic);
 
 private:
   void cloud_cb(const sensor_msgs::PointCloud2ConstPtr& cloud_ptr);
@@ -56,7 +71,16 @@ private:
 
   bool check_convergence(const Calibration& prev_calibration, const Calibration& current_calibration) const;
 
-  unsigned int max_iterations_;
+  CalibrationOptions options_;
+
+  ros::NodeHandle nh_;
+  ros::Subscriber cloud_sub_;
+
+  pcl::PointCloud<pcl::PointXYZ> cloud1_;
+  pcl::PointCloud<pcl::PointXYZ> cloud2_;
+
+  unsigned int received_half_scans_;
+  bool calibration_running_;
 };
 
 }

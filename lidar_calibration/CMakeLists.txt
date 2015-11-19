@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
 
+SET(CMAKE_BUILD_TYPE RelWithDebInfo)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -74,12 +76,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
 # )
 
 set(HEADERS
-  include/${PROJECT_NAME}/point_cloud_aggregator.h
   include/${PROJECT_NAME}/lidar_calibration.h
 )
 
 set(SOURCES
-  src/point_cloud_aggregator.cpp
   src/lidar_calibration.cpp
 )
 
@@ -149,7 +149,7 @@ add_dependencies(lidar_calibration
 )
 
 ## Declare a C++ executable
-add_executable(capture_data_node src/capture_data_node.cpp)
+add_executable(lidar_calibration_node src/lidar_calibration_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -159,7 +159,7 @@ add_executable(capture_data_node src/capture_data_node.cpp)
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
 )
-target_link_libraries(capture_data_node
+target_link_libraries(lidar_calibration_node
   ${PROJECT_NAME} 
   ${catkin_LIBRARIES}
 )

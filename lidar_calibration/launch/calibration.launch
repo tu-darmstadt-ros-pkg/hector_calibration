@@ -12,10 +12,12 @@
   
  <node pkg="vigir_cloud_to_planar_scan" type="rotating_cloud_to_aggregated_cloud_node" name="cloud_aggregator_node" output="screen">
     <remap from="/cloud" to="/head_lidar/scan_cloud"/>
-    <remap from="/cloud_out" to="/head_lidar/half_scan"/>
+    <remap from="/cloud_out" to="/head_lidar/half_scans"/>
     <param name="target_frame" value="head_lidar_actuator_frame"/>
   </node> 
   
   <node pkg="tf" type="static_transform_publisher" name="head_lidar_actuator_frame_pub" args="0.061 0 0.134 0 0 0 1 head_link head_lidar_actuator_frame 100" />
+  
+  <!--<node pkg="lidar_calibration" type="lidar_calibration_node" name="lidar_calibration_node" /> -->
   
 </launch>
