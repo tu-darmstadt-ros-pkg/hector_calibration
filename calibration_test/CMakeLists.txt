@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-
+find_package(Ceres REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -117,6 +117,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${CERES_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -131,7 +132,8 @@ include_directories(
 
 ## Declare a C++ executable
 # add_executable(calibration_test_node src/calibration_test_node.cpp)
-add_executable(example src/example.cpp)
+add_executable(pcl_example src/pcl_example.cpp)
+add_executable(ceres_example src/ceres_example.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -141,7 +143,8 @@ add_executable(example src/example.cpp)
 # target_link_libraries(calibration_test_node
 #   ${catkin_LIBRARIES}
 # )
-target_link_libraries(example ${catkin_LIBRARIES})
+target_link_libraries(pcl_example ${catkin_LIBRARIES})
+target_link_libraries(ceres_example ${catkin_LIBRARIES} ${CERES_LIBRARIES})
 
 #############
 ## Install ##

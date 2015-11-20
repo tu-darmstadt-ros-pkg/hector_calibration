@@ -14,6 +14,9 @@
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 
+// ceres solver
+#include <ceres/ceres.h>
+#include <ceres/rotation.h>
 namespace hector_calibration {
 
 class LidarCalibration {
@@ -67,7 +70,7 @@ private:
   void applyCalibration(pcl::PointCloud<pcl::PointXYZ>& cloud1, pcl::PointCloud<pcl::PointXYZ>& cloud2, const Calibration& calibration) const;
   pcl::PointCloud<pcl::PointNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) const;
   std::vector<int> findNeighbors(const pcl::PointCloud<pcl::PointXYZ> &cloud1, const pcl::PointCloud<pcl::PointXYZ> &cloud2) const;
-  Calibration optimize_calibration(const pcl::PointCloud<pcl::PointNormal>& normals, const std::vector<int> neighbor_mapping) const;
+  Calibration optimize_calibration(const pcl::PointCloud<pcl::PointXYZ> &cloud1, const pcl::PointCloud<pcl::PointXYZ> &cloud2, const pcl::PointCloud<pcl::PointNormal>& normals, const std::vector<int> neighbor_mapping) const;
 
   bool check_convergence(const Calibration& prev_calibration, const Calibration& current_calibration) const;
 

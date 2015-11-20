@@ -17,7 +17,7 @@ SET(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-
+find_package(Ceres REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -133,6 +133,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${CERES_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -162,6 +163,7 @@ target_link_libraries(${PROJECT_NAME}
 target_link_libraries(lidar_calibration_node
   ${PROJECT_NAME} 
   ${catkin_LIBRARIES}
+  ${CERES_LIBRARIES}
 )
 
 #############
