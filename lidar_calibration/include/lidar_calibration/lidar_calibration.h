@@ -17,6 +17,8 @@
 // ceres solver
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
+#include <lidar_calibration/point_plane_error.h>
+
 namespace hector_calibration {
 
 class LidarCalibration {

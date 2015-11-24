@@ -2,6 +2,24 @@
 
 namespace hector_calibration {
 
+bool is_valid_point(const pcl::PointXYZ& point) {
+  for (unsigned int i = 0; i < 3; i++) {
+    if (std::isnan(point.data[i]) || std::isinf(point.data[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool is_valid_cloud(const pcl::PointCloud<pcl::PointXYZ>& cloud) {
+  for (unsigned int i = 0; i < cloud.size(); i++) {
+    if (!is_valid_point(cloud[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
 LidarCalibration::LidarCalibration(const ros::NodeHandle& nh) {
   nh_ = nh;
   calibration_running_ = false;
@@ -9,7 +27,7 @@ LidarCalibration::LidarCalibration(const ros::NodeHandle& nh) {
 }
 
 void LidarCalibration::set_options(CalibrationOptions options) {
-  //options_ = options;
+  options_ = options;
 }
 
 bool LidarCalibration::start_calibration(std::string cloud_topic) {
@@ -32,7 +50,12 @@ void LidarCalibration::cloud_cb(const sensor_msgs::PointCloud2ConstPtr& cloud_pt
     calibration_running_ = true;
     pcl::fromROSMsg(*cloud_ptr, cloud2_);
     ROS_INFO_STREAM("Copied second cloud. Size:" << cloud2_.size());
-    calibrate(cloud1_, cloud2_, options_.init_calibration);
+    if (cloud1_.size() <= cloud2_.size()) {
+      calibrate(cloud1_, cloud2_, options_.init_calibration);
+    } else {
+      calibrate(cloud2_, cloud1_, options_.init_calibration);
+    }
+
     calibration_running_ = false;
     return;
   }
@@ -45,6 +68,13 @@ void LidarCalibration::calibrate(pcl::PointCloud<pcl::PointXYZ>& cloud1,
                                  const Calibration& init_calibration) {
   ROS_INFO_STREAM("Starting calibration.  Sizes: " << cloud1.size() << ", " << cloud2.size());
 
+  if(!is_valid_cloud(cloud1)) {
+    ROS_WARN("Cloud 1 has invalid points");
+  }
+  if(!is_valid_cloud(cloud2)) {
+    ROS_WARN("Cloud 2 has invalid points");
+  }
+
   std::vector<Calibration> calibrations;
   calibrations.push_back(init_calibration);
 
@@ -52,9 +82,18 @@ void LidarCalibration::calibrate(pcl::PointCloud<pcl::PointXYZ>& cloud1,
   do {
     ROS_INFO_STREAM("[LidarCalibration] Starting iteration " << (iteration_counter+1));
     applyCalibration(cloud1, cloud2, calibrations[calibrations.size()-1]);
+    if(!is_valid_cloud(cloud1)) {
+      ROS_WARN("Cloud 1 has invalid points");
+    }
+    if(!is_valid_cloud(cloud2)) {
+      ROS_WARN("Cloud 2 has invalid points");
+    }
     pcl::PointCloud<pcl::PointNormal> normals = computeNormals(cloud1);
     pcl::PointCloud<pcl::PointXYZ> cloud1_reduced;
     pcl::copyPointCloud(normals, cloud1_reduced);
+    if(!is_valid_cloud(cloud1_reduced)) {
+      ROS_WARN("cloud1_reduced has invalid points");
+    }
     std::vector<int> neighbor_mapping = findNeighbors(cloud1_reduced, cloud2);
 
     calibrations.push_back(optimize_calibration(cloud1_reduced, cloud2, normals, neighbor_mapping));
@@ -75,6 +114,7 @@ void LidarCalibration::applyCalibration(pcl::PointCloud<pcl::PointXYZ>& cloud1,
   pcl::transformPointCloud(cloud2, cloud2, transform);
 }
 
+// TODO Voxelgrid
 pcl::PointCloud<pcl::PointNormal>
 LidarCalibration::computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) const{
   ROS_INFO_STREAM("Compute normals. Point cloud size: " << cloud.size());
@@ -120,45 +160,6 @@ LidarCalibration::findNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
   return mapping;
 }
 
-struct PointPlaneResidual {
-    PointPlaneResidual(double x1[3], double x2[3], double normal[3]) {
-    for (unsigned int i = 0; i < 3; i++) {
-      x1_[i] = x1[i];
-      x2_[i] = x2[i];
-      normal_[i] = normal[i];
-    }
-  }
-
-  template<typename T>
-  bool operator()(const T* const rpy_rotation, const T* const translation, T* residuals) const{
-    // residual = n' * (x1 - H* x2)
-
-    // Translate x2
-    T x2_t[3];
-    for (unsigned int i = 0; i < 2; i++) {
-      x2_t[i] = T(x2_[i]) + translation[i];
-    }
-    x2_t[2] = T(x2_[2]);
-
-    // Rotate x2
-    T rotation_matrix[9];
-    ceres::EulerAnglesToRotationMatrix(rpy_rotation, 3, rotation_matrix);
-    T quaternion[4];
-    ceres::RotationMatrixToQuaternion(rotation_matrix, quaternion);
-    T x2_r[3];
-    ceres::QuaternionRotatePoint(quaternion, x2_t, x2_r);
-
-    residuals[0] = T(0);
-    for (unsigned int i = 0; i < 3; i++) {
-      residuals[0] += T(normal_[i]) * (T(x1_[i]) - x2_r[i]);
-    }
-  }
-
-  double x1_[3];
-  double x2_[3];
-  double normal_[3];
-};
-
 LidarCalibration::Calibration
 LidarCalibration::optimize_calibration(const pcl::PointCloud<pcl::PointXYZ> &cloud1,
                                        const pcl::PointCloud<pcl::PointXYZ> &cloud2,
@@ -186,17 +187,7 @@ LidarCalibration::optimize_calibration(const pcl::PointCloud<pcl::PointXYZ> &clo
     pcl::PointXYZ pcl_x1 = cloud1[i];
     pcl::PointXYZ pcl_x2 = cloud2[x2_index];
     pcl::PointNormal pcl_normal = normals[i];
-    double x1[3];
-    double x2[3];
-    double normal[3];
-    for (unsigned int i = 0; i < 3; i++) {
-      x1[i] = (double) pcl_x1.data[i];
-      x2[i] = (double) pcl_x2.data[i];
-      normal[i] = (double) pcl_normal.normal[i];
-    }
-    ceres::CostFunction* cost_function =
-        new ceres::AutoDiffCostFunction<PointPlaneResidual, 1, 1, 1>(
-          new PointPlaneResidual(x1, x2, normal));
+    ceres::CostFunction* cost_function = PointPlaneError::Create(pcl_x1, pcl_x2, pcl_normal);
     problem.AddResidualBlock(cost_function, NULL, rotation, translation);
     residual_count++;
   }

@@ -77,6 +77,7 @@ find_package(Ceres REQUIRED)
 
 set(HEADERS
   include/${PROJECT_NAME}/lidar_calibration.h
+  include/${PROJECT_NAME}/point_plane_error.h
 )
 
 set(SOURCES
