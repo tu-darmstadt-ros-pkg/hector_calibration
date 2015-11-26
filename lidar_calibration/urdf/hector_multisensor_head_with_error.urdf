@@ -72,7 +72,7 @@
   </link>
   <joint name="head_link_hokuyo_laser_joint" type="fixed">
     <!-- CHANGE HERE FOR LIDAR MODEL ERROR -->
-    <origin rpy="0 0 0" xyz="0 0.01 0"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
     <parent link="head_lidar_mount_link"/>
     <child link="head_link_hokuyo_laser_frame"/>
   </joint>

@@ -9,6 +9,7 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/search/kdtree.h>
 #include <pcl/surface/mls.h>
+#include <pcl/filters/filter.h>
 
 // ros
 #include <ros/ros.h>
@@ -85,7 +86,7 @@ private:
   pcl::PointCloud<pcl::PointXYZ> cloud2_;
 
   unsigned int received_half_scans_;
-  bool calibration_running_;
+  bool waiting_for_pcs_;
 };
 
 }

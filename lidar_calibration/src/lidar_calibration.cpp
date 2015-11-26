@@ -2,7 +2,8 @@
 
 namespace hector_calibration {
 
-bool is_valid_point(const pcl::PointXYZ& point) {
+template<typename T>
+bool is_valid_point(const T& point) {
   for (unsigned int i = 0; i < 3; i++) {
     if (std::isnan(point.data[i]) || std::isinf(point.data[i])) {
       return false;
@@ -19,10 +20,24 @@ bool is_valid_cloud(const pcl::PointCloud<pcl::PointXYZ>& cloud) {
   }
   return true;
 }
+template<typename T>
+pcl::PointCloud<T> remove_invalid_points(pcl::PointCloud<T>& cloud) {
+  pcl::PointCloud<T> cleaned_cloud;
+  unsigned int invalid_counter = 0;
+  for (unsigned int i = 0; i < cloud.size(); i++) {
+    if (is_valid_point<T>(cloud[i])) {
+      cleaned_cloud.push_back(cloud[i]);
+      invalid_counter++;
+    }
+  }
+  ROS_INFO_STREAM("Removed " << invalid_counter << " invalid points");
+  return cleaned_cloud;
+}
+
 
 LidarCalibration::LidarCalibration(const ros::NodeHandle& nh) {
   nh_ = nh;
-  calibration_running_ = false;
+  waiting_for_pcs_ = false;
   received_half_scans_ = 0;
 }
 
@@ -32,22 +47,23 @@ void LidarCalibration::set_options(CalibrationOptions options) {
 
 bool LidarCalibration::start_calibration(std::string cloud_topic) {
   received_half_scans_ = 0;
+  waiting_for_pcs_ = true;
   cloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(cloud_topic, 1000, &LidarCalibration::cloud_cb, this);
 }
 
 void LidarCalibration::cloud_cb(const sensor_msgs::PointCloud2ConstPtr& cloud_ptr) {
-  received_half_scans_++;
-  ROS_INFO_STREAM("Received scan " << received_half_scans_ << "/3.");
-  if (calibration_running_) {
+  if (!waiting_for_pcs_) {
     return;
   }
+  received_half_scans_++;
+  ROS_INFO_STREAM("Received scan " << received_half_scans_ << "/3.");
   // ditch first half-scan since it could be incomplete
   if (received_half_scans_ == 2) { // get second half-scan
     pcl::fromROSMsg(*cloud_ptr, cloud1_);
     ROS_INFO_STREAM("Copied first cloud. Size:" << cloud1_.size());
     return;
   } else if (received_half_scans_ == 3) { // get third half-scan
-    calibration_running_ = true;
+    waiting_for_pcs_ = false;
     pcl::fromROSMsg(*cloud_ptr, cloud2_);
     ROS_INFO_STREAM("Copied second cloud. Size:" << cloud2_.size());
     if (cloud1_.size() <= cloud2_.size()) {
@@ -55,8 +71,6 @@ void LidarCalibration::cloud_cb(const sensor_msgs::PointCloud2ConstPtr& cloud_pt
     } else {
       calibrate(cloud2_, cloud1_, options_.init_calibration);
     }
-
-    calibration_running_ = false;
     return;
   }
   ROS_INFO_STREAM("Skipping cloud");
@@ -98,7 +112,7 @@ void LidarCalibration::calibrate(pcl::PointCloud<pcl::PointXYZ>& cloud1,
 
     calibrations.push_back(optimize_calibration(cloud1_reduced, cloud2, normals, neighbor_mapping));
     iteration_counter++;
-  } while(iteration_counter < options_.max_iterations
+  } while(ros::ok() && iteration_counter < options_.max_iterations
           && (iteration_counter < 2 || !check_convergence(calibrations[calibrations.size()-2], calibrations[calibrations.size()-1])));
 }
 
@@ -118,28 +132,29 @@ void LidarCalibration::applyCalibration(pcl::PointCloud<pcl::PointXYZ>& cloud1,
 pcl::PointCloud<pcl::PointNormal>
 LidarCalibration::computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) const{
   ROS_INFO_STREAM("Compute normals. Point cloud size: " << cloud.size());
-//  pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>());
+  pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>());
   pcl::MovingLeastSquares<pcl::PointXYZ, pcl::PointNormal> mls;
   mls.setComputeNormals(true);
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::copyPointCloud(cloud, *cloud_ptr);
   mls.setInputCloud(cloud_ptr);
-  mls.setPolynomialOrder(1);
-//  mls.setPolynomialFit(true);
-//  mls.setSearchMethod(tree);
+ // mls.setPolynomialOrder(1);
+  mls.setPolynomialFit(true);
+  mls.setSearchMethod(tree);
   mls.setSearchRadius(0.05);
 
   pcl::PointCloud<pcl::PointNormal> normals;
   mls.process(normals);
   ROS_INFO_STREAM("Reduced point cloud size: " << normals.size());
-  return normals;
+  pcl::PointCloud<pcl::PointNormal> cloud_cleaned = remove_invalid_points<pcl::PointNormal>(normals);
+  return cloud_cleaned;
 }
 
 std::vector<int>
 LidarCalibration::findNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
                                 const pcl::PointCloud<pcl::PointXYZ>& cloud2) const {
-  ROS_INFO_STREAM("Compute neighbor mapping. Sizes: " << cloud1.size() << ", " << cloud2.size());
+  ROS_INFO_STREAM("Computing neighbor mapping. Sizes: " << cloud1.size() << ", " << cloud2.size());
   pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;  // Maybe optimize by using same tree as in normal estimation?
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2_ptr(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::copyPointCloud(cloud2, *cloud2_ptr);
