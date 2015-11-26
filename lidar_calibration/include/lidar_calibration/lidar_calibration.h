@@ -10,10 +10,12 @@
 #include <pcl/search/kdtree.h>
 #include <pcl/surface/mls.h>
 #include <pcl/filters/filter.h>
+#include <pcl/filters/crop_box.h>
 
 // ros
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <visualization_msgs/MarkerArray.h>
 
 // ceres solver
 #include <ceres/ceres.h>
@@ -68,6 +70,7 @@ public:
 
 private:
   void cloud_cb(const sensor_msgs::PointCloud2ConstPtr& cloud_ptr);
+  void publish_neighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1, const pcl::PointCloud<pcl::PointXYZ>& cloud2, const std::vector<int>& mapping) const;
 
   void calibrate(pcl::PointCloud<pcl::PointXYZ>& cloud1, pcl::PointCloud<pcl::PointXYZ>& cloud2, const Calibration& init_calibration);
   void applyCalibration(pcl::PointCloud<pcl::PointXYZ>& cloud1, pcl::PointCloud<pcl::PointXYZ>& cloud2, const Calibration& calibration) const;
@@ -81,6 +84,9 @@ private:
 
   ros::NodeHandle nh_;
   ros::Subscriber cloud_sub_;
+  ros::Publisher mls_cloud_pub_;
+  ros::Publisher results_pub_;
+  ros::Publisher neighbor_pub_;
 
   pcl::PointCloud<pcl::PointXYZ> cloud1_;
   pcl::PointCloud<pcl::PointXYZ> cloud2_;
