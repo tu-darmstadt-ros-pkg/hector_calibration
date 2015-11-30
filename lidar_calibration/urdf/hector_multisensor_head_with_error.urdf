@@ -71,8 +71,9 @@
     </xacro:inertial_sphere_with_pose_macro>
   </link>
   <joint name="head_link_hokuyo_laser_joint" type="fixed">
-    <!-- CHANGE HERE FOR LIDAR MODEL ERROR -->
+    <!-- CHANGE BELOW FOR LIDAR MODEL ERROR -->
     <origin rpy="0 0 0" xyz="0 0.05 0.05"/>
+    <!-- CHANGE ABOVE FOR LIDAR MODEL ERROR -->
     <parent link="head_lidar_mount_link"/>
     <child link="head_link_hokuyo_laser_frame"/>
   </joint>

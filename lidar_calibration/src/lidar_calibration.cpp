@@ -109,8 +109,6 @@ pcl::PointCloud<PointT> crop_cloud(const pcl::PointCloud<PointT>& cloud, double 
 
 LidarCalibration::LidarCalibration(const ros::NodeHandle& nh) {
   nh_ = nh;
-  waiting_for_pcs_ = false;
-  received_half_scans_ = 0;
 
   mls_cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("mls_cloud", 1000);
   results_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("results_cloud", 1000);
@@ -121,53 +119,26 @@ void LidarCalibration::set_options(CalibrationOptions options) {
   options_ = options;
 }
 
-bool LidarCalibration::start_calibration(std::string cloud_topic) {
-  received_half_scans_ = 0;
-  waiting_for_pcs_ = true;
-  cloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(cloud_topic, 1000, &LidarCalibration::cloud_cb, this);
-}
+//void LidarCalibration::cloud_cb(const sensor_msgs::PointCloud2ConstPtr& cloud_ptr) {
+//    cloud1_ = crop_cloud<pcl::PointXYZ>(cloud1_, 1);
+//    cloud2_ = crop_cloud<pcl::PointXYZ>(cloud2_, 1);
+//    if (cloud1_.size() <= cloud2_.size()) {
+//      calibrate(cloud1_, cloud2_, options_.init_calibration);
+//    } else {
+//      calibrate(cloud2_, cloud1_, options_.init_calibration);
+//    }    transformCloud(cloud_agg1_, half_scan1_);
+//  ROS_INFO_STREAM("Skipping cloud");
+//}
 
-void LidarCalibration::cloud_cb(const sensor_msgs::PointCloud2ConstPtr& cloud_ptr) {
-  if (!waiting_for_pcs_) {
-    return;
-  }
-  received_half_scans_++;
-  ROS_INFO_STREAM("Received scan " << received_half_scans_ << "/3.");
-  // ditch first half-scan since it could be incomplete
-  if (received_half_scans_ == 2) { // get second half-scan
-    pcl::fromROSMsg(*cloud_ptr, cloud1_);
-    ROS_INFO_STREAM("Copied first cloud. Size:" << cloud1_.size());
-    return;
-  } else if (received_half_scans_ == 3) { // get third half-scan
-    waiting_for_pcs_ = false;
-    pcl::fromROSMsg(*cloud_ptr, cloud2_);
-    ROS_INFO_STREAM("Copied second cloud. Size:" << cloud2_.size());
-    cloud1_ = crop_cloud<pcl::PointXYZ>(cloud1_, 1);
-    cloud2_ = crop_cloud<pcl::PointXYZ>(cloud2_, 1);
-    if (cloud1_.size() <= cloud2_.size()) {
-      calibrate(cloud1_, cloud2_, options_.init_calibration);
-    } else {
-      calibrate(cloud2_, cloud1_, options_.init_calibration);
-    }
-    return;
-  }
-  ROS_INFO_STREAM("Skipping cloud");
-}
+void LidarCalibration::calibrate() {
+  ROS_INFO_STREAM("Starting calibration.");
+  // TODO send reset to agg -- maybe as service to wait for completion?
 
-void LidarCalibration::calibrate(pcl::PointCloud<pcl::PointXYZ>& cloud1,
-                                 pcl::PointCloud<pcl::PointXYZ>& cloud2,
-                                 const Calibration& init_calibration) {
-  ROS_INFO_STREAM("Starting calibration.  Sizes: " << cloud1.size() << ", " << cloud2.size());
-
-  if(!is_valid_cloud(cloud1)) {
-    ROS_WARN("Cloud 1 has invalid points");
-  }
-  if(!is_valid_cloud(cloud2)) {
-    ROS_WARN("Cloud 2 has invalid points");
-  }
+  pcl::PointCloud<pcl::PointXYZ> cloud1;
+  pcl::PointCloud<pcl::PointXYZ> cloud2;
 
   std::vector<Calibration> calibrations;
-  calibrations.push_back(init_calibration);
+  calibrations.push_back(options_.init_calibration);
 
   unsigned int iteration_counter = 0;
   do {
@@ -201,12 +172,7 @@ void LidarCalibration::applyCalibration(pcl::PointCloud<pcl::PointXYZ>& cloud1,
                                         pcl::PointCloud<pcl::PointXYZ>& cloud2,
                                         const Calibration& calibration) const {
   ROS_INFO_STREAM("Applying new calibration. Sizes: " << cloud1.size() << ", " << cloud2.size());
-  Eigen::Affine3d transform(Eigen::AngleAxisd(calibration.yaw, Eigen::Vector3d::UnitZ())
-      * Eigen::AngleAxisd(calibration.pitch, Eigen::Vector3d::UnitY())
-      * Eigen::AngleAxisd(calibration.roll, Eigen::Vector3d::UnitX()));
-  transform.translation() = Eigen::Vector3d(calibration.x, calibration.y, 0);
-  pcl::transformPointCloud(cloud1, cloud1, transform); //Note: Can be used with cloud_in equal to cloud_out
-  pcl::transformPointCloud(cloud2, cloud2, transform);
+  // TODO request new clouds via service with new calibration data
 }
 
 // TODO Voxelgrid
@@ -296,8 +262,8 @@ LidarCalibration::optimize_calibration(const pcl::PointCloud<pcl::PointXYZ> &clo
   std::cout << summary.BriefReport() << "\n";
 
   Calibration calibration;
-  calibration.x = translation[0];
-  calibration.y = translation[1];
+  calibration.y = translation[0];
+  calibration.z = translation[1];
   calibration.roll = rotation[0];
   calibration.pitch = rotation[1];
   calibration.yaw = rotation[2];

@@ -5,6 +5,7 @@ project(lidar_calibration)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  message_generation
   pcl_conversions
   pcl_ros
   roscpp
@@ -56,11 +57,9 @@ find_package(Ceres REQUIRED)
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(FILES
+   ApplyCalibration.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -70,18 +69,20 @@ find_package(Ceres REQUIRED)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   sensor_msgs
-# )
+generate_messages(DEPENDENCIES
+  std_msgs
+  sensor_msgs
+)
 
 set(HEADERS
   include/${PROJECT_NAME}/lidar_calibration.h
   include/${PROJECT_NAME}/point_plane_error.h
+  include/${PROJECT_NAME}/cloud_aggregator.h
 )
 
 set(SOURCES
   src/lidar_calibration.cpp
+  src/cloud_aggregator.cpp
 )
 
 ################################################
@@ -117,6 +118,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES lidar_calibration
   CATKIN_DEPENDS
+   message_runtime
    pcl_conversions
    pcl_ros 
    roscpp 
@@ -152,6 +154,9 @@ add_dependencies(lidar_calibration
 
 ## Declare a C++ executable
 add_executable(lidar_calibration_node src/lidar_calibration_node.cpp)
+add_dependencies(lidar_calibration_node ${catkin_EXPORTED_TARGETS})
+add_executable(cloud_aggregator_node src/cloud_aggregator_node.cpp)
+add_dependencies(cloud_aggregator_node ${catkin_EXPORTED_TARGETS})
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -160,11 +165,13 @@ add_executable(lidar_calibration_node src/lidar_calibration_node.cpp)
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
+  ${CERES_LIBRARIES}
 )
 target_link_libraries(lidar_calibration_node
-  ${PROJECT_NAME} 
-  ${catkin_LIBRARIES}
-  ${CERES_LIBRARIES}
+  ${PROJECT_NAME}
+)
+target_link_libraries(cloud_aggregator_node
+  ${PROJECT_NAME}
 )
 
 #############

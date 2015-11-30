@@ -28,8 +28,8 @@ class LidarCalibration {
 public:
   struct Calibration {
     Calibration() {
-      x = 0;
       y = 0;
+      z = 0;
       roll = 0;
       pitch = 0;
       yaw = 0;
@@ -37,12 +37,12 @@ public:
 
     std::string to_string() {
       std::stringstream ss;
-      ss << "[" << x << ", " << y << "; " << roll << ", " << pitch << ", " << yaw << "]";
+      ss << "[" << y << ", " << z << "; " << roll << ", " << pitch << ", " << yaw << "]";
       return ss.str();
     }
 
-    double x;
     double y;
+    double z;
 
     double roll;
     double pitch;
@@ -66,13 +66,11 @@ public:
 
   void set_options(CalibrationOptions options);
   bool load_options_from_param_server(const ros::NodeHandle& nh);
-  bool start_calibration(std::string cloud_topic);
+  void calibrate();
 
 private:
-  void cloud_cb(const sensor_msgs::PointCloud2ConstPtr& cloud_ptr);
   void publish_neighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1, const pcl::PointCloud<pcl::PointXYZ>& cloud2, const std::vector<int>& mapping) const;
 
-  void calibrate(pcl::PointCloud<pcl::PointXYZ>& cloud1, pcl::PointCloud<pcl::PointXYZ>& cloud2, const Calibration& init_calibration);
   void applyCalibration(pcl::PointCloud<pcl::PointXYZ>& cloud1, pcl::PointCloud<pcl::PointXYZ>& cloud2, const Calibration& calibration) const;
   pcl::PointCloud<pcl::PointNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) const;
   std::vector<int> findNeighbors(const pcl::PointCloud<pcl::PointXYZ> &cloud1, const pcl::PointCloud<pcl::PointXYZ> &cloud2) const;
@@ -83,16 +81,12 @@ private:
   CalibrationOptions options_;
 
   ros::NodeHandle nh_;
-  ros::Subscriber cloud_sub_;
   ros::Publisher mls_cloud_pub_;
   ros::Publisher results_pub_;
   ros::Publisher neighbor_pub_;
 
   pcl::PointCloud<pcl::PointXYZ> cloud1_;
   pcl::PointCloud<pcl::PointXYZ> cloud2_;
-
-  unsigned int received_half_scans_;
-  bool waiting_for_pcs_;
 };
 
 }

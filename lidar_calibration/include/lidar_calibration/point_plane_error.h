@@ -21,10 +21,10 @@ struct PointPlaneError {
 
     // Translate x2
     T x2_t[3];
-    for (unsigned int i = 0; i < 2; i++) {
+    x2_t[0] = T(x2_[0]);
+    for (unsigned int i = 1; i < 3; i++) {
       x2_t[i] = T(x2_[i]) + translation[i];
     }
-    x2_t[2] = T(x2_[2]);
 
     // Rotate x2
     T rotation_matrix[9];
