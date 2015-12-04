@@ -13,7 +13,7 @@ namespace hector_calibration {
     point_cloud1_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("half_scan_1",10,false);
     point_cloud2_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("half_scan_2",10,false);
 
-    apply_calibration_srv_ = nh_.advertiseService("apply_calibration", &CalibrationCloudAggregator::calibrationSrvCallback, this);
+    reset_clouds_srv_ = nh_.advertiseService("reset_clouds", &CalibrationCloudAggregator::resetSrvCallback, this);
 
     ros::NodeHandle pnh_("~");
 
@@ -75,10 +75,20 @@ namespace hector_calibration {
   }
 
   void CalibrationCloudAggregator::resetCallback(const std_msgs::Empty::ConstPtr&) {
+    resetClouds();
+  }
+
+  bool CalibrationCloudAggregator::resetSrvCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&) {
+    resetClouds();
+    return true;
+  }
+
+  void CalibrationCloudAggregator::resetClouds() {
     cloud_agg1_.clear();
     cloud_agg2_.clear();
     captured_clouds_ = 0;
     prior_roll_angle_ = 0.0;
+    apply_calibration_srv_.shutdown();
     ROS_INFO_STREAM("[CloudAggregator] Resetted half scans.");
   }
 
@@ -131,6 +141,9 @@ namespace hector_calibration {
         // mark cloud as complete
         captured_clouds_++;
         ROS_INFO_STREAM("[CloudAggregator] Captured half scan number: " << captured_clouds_);
+        if (captured_clouds_ == 3) {
+          apply_calibration_srv_ = nh_.advertiseService("apply_calibration", &CalibrationCloudAggregator::calibrationSrvCallback, this);
+        }
       } else {
         if (captured_clouds_ == 0) { // skip first half scan
           return;

@@ -33,6 +33,7 @@
 #include <laser_geometry/laser_geometry.h>
 #include <std_msgs/Empty.h>
 #include <std_msgs/Float64MultiArray.h>
+#include <std_srvs/Empty.h>
 #include <lidar_calibration/ApplyCalibration.h>
 
 // tf
@@ -72,9 +73,11 @@ private:
   void calibrationCallback(const std_msgs::Float64MultiArrayConstPtr& array_ptr);
   bool calibrationSrvCallback(lidar_calibration::ApplyCalibration::Request& request,
                               lidar_calibration::ApplyCalibration::Response& response);
+  bool resetSrvCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
   void publishCloud(const ros::Publisher& pub, sensor_msgs::PointCloud2 &cloud_msg);
 
 protected:
+  void resetClouds();
   void transformCloud(const std::vector<pc_roll_tuple>& cloud_agg, sensor_msgs::PointCloud2& cloud);
   ros::NodeHandle nh_;
   ros::Subscriber scan_sub_;
@@ -84,11 +87,12 @@ protected:
   ros::Publisher point_cloud2_pub_;
 
   ros::ServiceServer apply_calibration_srv_;
+  ros::ServiceServer reset_clouds_srv_;
 
   boost::shared_ptr<tf::TransformListener> tfl_;
   ros::Duration wait_duration_;
 
-  bool p_use_high_fidelity_projection_;
+  // bool p_use_high_fidelity_projection_;
   std::string p_target_frame_;
 
   double prior_roll_angle_;
