@@ -1,0 +1,6 @@
+---
+sensor_msgs/PointCloud2 scan_1
+std_msgs/Float64MultiArray angles1
+sensor_msgs/PointCloud2 scan_2
+std_msgs/Float64MultiArray angles2
+

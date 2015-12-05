@@ -2,38 +2,29 @@
 
 namespace hector_calibration {
   CalibrationCloudAggregator::CalibrationCloudAggregator() {
-    calibration_ = Eigen::Affine3d::Identity();
-
     prior_roll_angle_ = 0.0;
     captured_clouds_ = 0;
 
     scan_sub_ = nh_.subscribe("cloud", 10, &CalibrationCloudAggregator::cloudCallback, this);
     reset_sub_ = nh_.subscribe("reset_clouds", 10, &CalibrationCloudAggregator::resetCallback, this);
-    calibration_sub_ = nh_.subscribe("apply_calibration", 10, &CalibrationCloudAggregator::calibrationCallback, this);
     point_cloud1_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("half_scan_1",10,false);
     point_cloud2_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("half_scan_2",10,false);
 
     reset_clouds_srv_ = nh_.advertiseService("reset_clouds", &CalibrationCloudAggregator::resetSrvCallback, this);
 
     ros::NodeHandle pnh_("~");
-
-
     pnh_.param("target_frame", p_target_frame_, std::string("base_link"));
 
     tfl_.reset(new tf::TransformListener());
     wait_duration_ = ros::Duration(0.5);
   }
 
-  Eigen::Affine3d CalibrationCloudAggregator::getCalibrationMatrix() {
-    return calibration_;
-  }
-
   void CalibrationCloudAggregator::publishClouds() {
     if (captured_clouds_ < 3) {
       return;
     }
-    publishCloud(point_cloud1_pub_, half_scan1_);
-    publishCloud(point_cloud2_pub_, half_scan2_);
+    publishCloud(point_cloud1_pub_, cloud1_);
+    publishCloud(point_cloud2_pub_, cloud2_);
   }
 
   void CalibrationCloudAggregator::publishCloud(const ros::Publisher& pub, sensor_msgs::PointCloud2& cloud_msg) {
@@ -45,10 +36,9 @@ namespace hector_calibration {
   void CalibrationCloudAggregator::transformCloud(const std::vector<pc_roll_tuple>& cloud_agg, sensor_msgs::PointCloud2& cloud) {
     pcl::PointCloud<pcl::PointXYZ> tmp_agg_cloud;
     for (size_t i=0; i < cloud_agg.size(); ++i){
-      pcl::PointCloud<pcl::PointXYZ> pc_tmp;
-      pcl::transformPointCloud(*(cloud_agg[i].first), pc_tmp, calibration_);
       Eigen::Affine3d sensor_to_actuator(Eigen::AngleAxisd(cloud_agg[i].second, Eigen::Vector3d::UnitX()));
-      pcl::transformPointCloud(pc_tmp, pc_tmp, sensor_to_actuator);
+      pcl::PointCloud<pcl::PointXYZ> pc_tmp;
+      pcl::transformPointCloud(*cloud_agg[i].first, pc_tmp, sensor_to_actuator);
 
       if (tmp_agg_cloud.empty()){
         tmp_agg_cloud = pc_tmp;
@@ -88,39 +78,36 @@ namespace hector_calibration {
     cloud_agg2_.clear();
     captured_clouds_ = 0;
     prior_roll_angle_ = 0.0;
-    apply_calibration_srv_.shutdown();
+    request_scans_srv_.shutdown();
     ROS_INFO_STREAM("[CloudAggregator] Resetted half scans.");
   }
 
-  bool CalibrationCloudAggregator::calibrationSrvCallback(
-      lidar_calibration::ApplyCalibration::Request &request,
-      lidar_calibration::ApplyCalibration::Response &response) {
-    if (!applyCalibration(request.calibration_data.data)) {
-      return false;
+  void CalibrationCloudAggregator::scanToMsg(const std::vector<pc_roll_tuple>& cloud_agg,
+                                             sensor_msgs::PointCloud2& scan,
+                                             std_msgs::Float64MultiArray& angles)
+  {
+    pcl::PointCloud<pcl::PointXYZ> tmp_scan_cloud;
+    std::vector<double> angle_agg;
+    for (size_t i=0; i < cloud_agg.size(); ++i){
+      for (unsigned int j = 0; j < cloud_agg[i].first->size(); j++) {
+        angle_agg.push_back(cloud_agg[i].second);
+      }
+      if (tmp_scan_cloud.empty()){
+        tmp_scan_cloud = *cloud_agg[i].first;
+      }else{
+        tmp_scan_cloud += *cloud_agg[i].first;
+      }
     }
-    response.calibrated_half_scan_1 = half_scan1_;
-    response.calibrated_half_scan_2 = half_scan2_;
-    return true;
+    pcl::toROSMsg(tmp_scan_cloud, scan);
+    angles.data = angle_agg;
   }
 
-  void CalibrationCloudAggregator::calibrationCallback(const std_msgs::Float64MultiArrayConstPtr& array_ptr) {
-    applyCalibration(array_ptr->data);
-  }
 
-  bool CalibrationCloudAggregator::applyCalibration(const std::vector<double>& calibration_data) {
-    if (calibration_data.size() != 5) {
-      ROS_ERROR_STREAM("[CloudAggregator] Received invalid calibration data of size " << calibration_data.size() << ". Expected vector of size 5");
-      return false;
-    }
-    ROS_INFO_STREAM("[CloudAggregator] Applying new calibration");
-    Eigen::Affine3d transform(Eigen::AngleAxisd(calibration_data[4], Eigen::Vector3d::UnitZ())
-        * Eigen::AngleAxisd(calibration_data[3], Eigen::Vector3d::UnitY())
-        * Eigen::AngleAxisd(calibration_data[2], Eigen::Vector3d::UnitX()));
-    transform.translation() = Eigen::Vector3d(0, calibration_data[0], calibration_data[1]);
-    calibration_ = transform;
-    transformCloud(cloud_agg1_, half_scan1_);
-    transformCloud(cloud_agg2_, half_scan2_);
-    publishClouds();
+  bool CalibrationCloudAggregator::requestScansCallback(
+      lidar_calibration::RequestScans::Request& request,
+      lidar_calibration::RequestScans::Response& response) {
+    scanToMsg(cloud_agg1_, response.scan_1, response.angles1);
+    scanToMsg(cloud_agg2_, response.scan_2, response.angles2);
     return true;
   }
 
@@ -142,7 +129,10 @@ namespace hector_calibration {
         captured_clouds_++;
         ROS_INFO_STREAM("[CloudAggregator] Captured half scan number: " << captured_clouds_);
         if (captured_clouds_ == 3) {
-          apply_calibration_srv_ = nh_.advertiseService("apply_calibration", &CalibrationCloudAggregator::calibrationSrvCallback, this);
+          request_scans_srv_ = nh_.advertiseService("request_scans", &CalibrationCloudAggregator::requestScansCallback, this);
+          transformCloud(cloud_agg1_, cloud1_);
+          transformCloud(cloud_agg2_, cloud2_);
+          publishClouds();
         }
       } else {
         if (captured_clouds_ == 0) { // skip first half scan

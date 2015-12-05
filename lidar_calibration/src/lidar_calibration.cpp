@@ -136,6 +136,7 @@ LidarCalibration::crop_cloud(const std::vector<LaserPoint<double> > &scan, doubl
       }
     }
   }
+  ROS_INFO_STREAM("Cropped " << indices.size() << " points from scan");
 
   return scan_cropped;
 }
@@ -150,7 +151,7 @@ LidarCalibration::LidarCalibration(const ros::NodeHandle& nh) :
   results_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("results_cloud", 1000);
   neighbor_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("neighbor_mapping", 1000);
 
-  apply_calibration_client_ = nh_.serviceClient<lidar_calibration::ApplyCalibration>("head_lidar/apply_calibration");
+  request_scans_client_ = nh_.serviceClient<lidar_calibration::RequestScans>("head_lidar/request_scans");
   reset_clouds_client_ = nh_.serviceClient<std_srvs::Empty>("head_lidar/reset_clouds");
 }
 
@@ -160,6 +161,32 @@ void LidarCalibration::setOptions(CalibrationOptions options) {
 
 void LidarCalibration::setManualMode(bool manual) {
   manual_mode_ = manual;
+}
+
+std::vector<LaserPoint<double> >
+LidarCalibration::msgToLaserPoints(const sensor_msgs::PointCloud2& scan,
+                                   const std_msgs::Float64MultiArray& angles)
+{
+  pcl::PointCloud<pcl::PointXYZ> pcl_scan;
+  pcl::fromROSMsg(scan, pcl_scan);
+  std::vector<LaserPoint<double> > laser_points;
+  for (unsigned int i = 0; i < pcl_scan.size(); i++) {
+    LaserPoint<double> lp;
+    lp.point = Eigen::Vector3d(pcl_scan[i].x, pcl_scan[i].y, pcl_scan[i].z);
+    lp.angle = angles.data[i];
+    laser_points.push_back(lp);
+  }
+  return laser_points;
+}
+
+void LidarCalibration::requestScans(std::vector<LaserPoint<double> >& scan1,
+                  std::vector<LaserPoint<double> >& scan2) {
+  lidar_calibration::RequestScansRequest request;
+  lidar_calibration::RequestScansResponse response;
+  request_scans_client_.waitForExistence();
+  request_scans_client_.call(request, response);
+  scan1 = msgToLaserPoints(response.scan_1, response.angles1);
+  scan2 = msgToLaserPoints(response.scan_2, response.angles2);
 }
 
 void LidarCalibration::calibrate() {
@@ -172,6 +199,8 @@ void LidarCalibration::calibrate() {
   // TODO request laser points with angles from cloud agg
   std::vector<LaserPoint<double> > scan1;
   std::vector<LaserPoint<double> > scan2;
+  requestScans(scan1, scan2);
+  ROS_INFO_STREAM("Received point clouds of sizes " << scan1.size() << " and " << scan2.size() << ".");
 
   scan1 = crop_cloud(scan1, 1);
   scan2 = crop_cloud(scan2, 1);
@@ -236,7 +265,7 @@ void LidarCalibration::applyCalibration(const std::vector<LaserPoint<double> > &
 
 std::vector<WeightedNormal>
 LidarCalibration::computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) const{
-  pcl::NormalEstimation<pcl::PointXYZ, pcl::PointNormal> ne;
+  pcl::NormalEstimationOMP<pcl::PointXYZ, pcl::PointNormal> ne;
 
   pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>());
@@ -304,7 +333,7 @@ LidarCalibration::findNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
       }
     }
   }
-
+  ROS_INFO_STREAM("Found " << mapping.size() << " neighbor matches.");
   return mapping;
 }
 
@@ -332,6 +361,7 @@ LidarCalibration::optimize_calibration(const std::vector<LaserPoint<double> >& s
     unsigned int s2_index = it->second;
 
     ceres::CostFunction* cost_function = PointPlaneError::Create(scan1[s1_index], scan2[s2_index], normals[s1_index]);
+
     problem.AddResidualBlock(cost_function, NULL, rotation, translation);
     residual_count++;
   }

@@ -1,7 +1,7 @@
 #ifndef LIDAR_CALIBRATION_H
 #define LIDAR_CALIBRATION_H
 
-#include <lidar_calibration/ApplyCalibration.h>
+#include <lidar_calibration/RequestScans.h>
 
 // standard
 
@@ -14,6 +14,7 @@
 #include <pcl/filters/filter.h>
 #include <pcl/filters/crop_box.h>
 #include <pcl/features/normal_3d.h>
+#include <pcl/features/normal_3d_omp.h>
 
 // ros
 #include <ros/ros.h>
@@ -97,6 +98,10 @@ private:
                          const pcl::PointCloud<pcl::PointXYZ>& cloud2,
                          const std::map<unsigned int, unsigned int>& mapping) const;
 
+  void requestScans(std::vector<LaserPoint<double> >& scan1,
+                    std::vector<LaserPoint<double> >& scan2);
+  std::vector<LaserPoint<double> > msgToLaserPoints(const sensor_msgs::PointCloud2& scan, const std_msgs::Float64MultiArray& angles);
+
   std::vector<LaserPoint<double> > crop_cloud(const std::vector<LaserPoint<double> >& scan, double range);
 
   void applyCalibration(const std::vector<LaserPoint<double> >& scan1,
@@ -124,7 +129,7 @@ private:
   ros::Publisher results_pub_;
   ros::Publisher neighbor_pub_;
 
-  ros::ServiceClient apply_calibration_client_;
+  ros::ServiceClient request_scans_client_;
   ros::ServiceClient reset_clouds_client_;
 
   bool manual_mode_;

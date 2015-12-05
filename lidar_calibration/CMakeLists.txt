@@ -58,7 +58,7 @@ find_package(Ceres REQUIRED)
 
 ## Generate services in the 'srv' folder
 add_service_files(FILES
-   ApplyCalibration.srv
+   RequestScans.srv
 )
 
 ## Generate actions in the 'action' folder

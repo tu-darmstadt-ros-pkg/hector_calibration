@@ -34,7 +34,7 @@
 #include <std_msgs/Empty.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <std_srvs/Empty.h>
-#include <lidar_calibration/ApplyCalibration.h>
+#include <lidar_calibration/RequestScans.h>
 
 // tf
 #include <tf/transform_listener.h>
@@ -61,32 +61,29 @@ public:
   CalibrationCloudAggregator();
   void publishClouds();
 
-  Eigen::Affine3d getCalibrationMatrix();
   void setPeriodicPublishing(bool status, double period);
-  bool applyCalibration(const std::vector<double> &calibration_data);
-
 private:
   void timerCallback(const ros::TimerEvent&);
   void cloudCallback (const sensor_msgs::PointCloud2::ConstPtr& cloud_in);
   void resetCallback(const std_msgs::Empty::ConstPtr&);
   // array contains y, z, roll, pitch, yaw
   void calibrationCallback(const std_msgs::Float64MultiArrayConstPtr& array_ptr);
-  bool calibrationSrvCallback(lidar_calibration::ApplyCalibration::Request& request,
-                              lidar_calibration::ApplyCalibration::Response& response);
+  bool requestScansCallback(lidar_calibration::RequestScans::Request& request,
+                              lidar_calibration::RequestScans::Response& response);
   bool resetSrvCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
   void publishCloud(const ros::Publisher& pub, sensor_msgs::PointCloud2 &cloud_msg);
 
 protected:
   void resetClouds();
   void transformCloud(const std::vector<pc_roll_tuple>& cloud_agg, sensor_msgs::PointCloud2& cloud);
+  void scanToMsg(const std::vector<pc_roll_tuple>& cloud_agg, sensor_msgs::PointCloud2& scan, std_msgs::Float64MultiArray& angles);
   ros::NodeHandle nh_;
   ros::Subscriber scan_sub_;
   ros::Subscriber reset_sub_;
-  ros::Subscriber calibration_sub_;
   ros::Publisher point_cloud1_pub_;
   ros::Publisher point_cloud2_pub_;
 
-  ros::ServiceServer apply_calibration_srv_;
+  ros::ServiceServer request_scans_srv_;
   ros::ServiceServer reset_clouds_srv_;
 
   boost::shared_ptr<tf::TransformListener> tfl_;
@@ -101,11 +98,16 @@ protected:
 
   std::vector<pc_roll_tuple> cloud_agg1_;
   std::vector<pc_roll_tuple> cloud_agg2_;
-  sensor_msgs::PointCloud2 half_scan1_;
-  sensor_msgs::PointCloud2 half_scan2_;
-  ros::Timer timer_;
 
-  Eigen::Affine3d calibration_;
+  sensor_msgs::PointCloud2 half_scan1_;
+  std::vector<double> angles1_;
+  sensor_msgs::PointCloud2 half_scan2_;
+  std::vector<double> angles2_;
+
+  sensor_msgs::PointCloud2 cloud1_;
+  sensor_msgs::PointCloud2 cloud2_;
+
+  ros::Timer timer_;
 };
 
 }

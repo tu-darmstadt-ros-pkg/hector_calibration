@@ -1,5 +1,0 @@
-std_msgs/Float64MultiArray calibration_data
----
-sensor_msgs/PointCloud2 calibrated_half_scan_1
-sensor_msgs/PointCloud2 calibrated_half_scan_2
-
