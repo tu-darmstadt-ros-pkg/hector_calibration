@@ -8,7 +8,13 @@ int main(int argc, char** argv) {
 
   google::InitGoogleLogging(argv[0]);
   hector_calibration::LidarCalibration calibration(nh);
-  calibration.setManualMode(true);
+  calibration.setManualMode(false);
+  calibration.setPeriodicPublishing(true, 5);
+
+  hector_calibration::LidarCalibration::CalibrationOptions options;
+  options.init_calibration = hector_calibration::LidarCalibration::Calibration(0, 0, 0, 0, 0);
+  calibration.setOptions(options);
+
   calibration.calibrate();
 
   ros::spin();

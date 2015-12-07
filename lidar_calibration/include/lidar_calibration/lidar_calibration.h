@@ -40,7 +40,15 @@ public:
       yaw = 0;
     }
 
-    std::string to_string() {
+    Calibration(double _y, double _z, double _roll, double _pitch, double _yaw) {
+      y = _y;
+      z = _z;
+      roll = _roll;
+      pitch = _pitch;
+      yaw = _yaw;
+    }
+
+    std::string toString() {
       std::stringstream ss;
       ss << "[" << y << ", " << z << "; " << roll << ", " << pitch << ", " << yaw << "]";
       return ss.str();
@@ -53,6 +61,10 @@ public:
       if (n == 3) return pitch;
       if (n == 4) return yaw;
       return 0.0;
+    }
+
+    double computeError(const Calibration& rhs) {
+
     }
 
     Eigen::Affine3d getTransform() const {
@@ -92,9 +104,12 @@ public:
   bool loadOptionsFromParamServer(const ros::NodeHandle& nh);
   void calibrate();
   void setManualMode(bool manual);
+  void setPeriodicPublishing(bool status, double period);
 
 private:
-  void publish_neighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
+  void publishResults();
+  void timerCallback(const ros::TimerEvent&);
+  void publishNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
                          const pcl::PointCloud<pcl::PointXYZ>& cloud2,
                          const std::map<unsigned int, unsigned int>& mapping) const;
 
@@ -114,27 +129,40 @@ private:
   std::vector<WeightedNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) const;
   std::map<unsigned int, unsigned int> findNeighbors(const pcl::PointCloud<pcl::PointXYZ> &cloud1,
                                                      const pcl::PointCloud<pcl::PointXYZ> &cloud2) const;
-  Calibration optimize_calibration(const std::vector<LaserPoint<double> >& scan1,
+  Calibration optimizeCalibration(const std::vector<LaserPoint<double> >& scan1,
                                    const std::vector<LaserPoint<double> >& scan2,
                                    const Calibration& current_calibration,
                                    const std::vector<WeightedNormal> & normals,
                                    const std::map<unsigned int, unsigned int> neighbor_mapping) const;
 
-  bool check_convergence(const Calibration& prev_calibration, const Calibration& current_calibration) const;
+  bool checkConvergence(const Calibration& prev_calibration, const Calibration& current_calibration) const;
 
   CalibrationOptions options_;
 
   ros::NodeHandle nh_;
-  ros::Publisher mls_cloud_pub_;
-  ros::Publisher results_pub_;
+  ros::Publisher cloud1_pub_;
+  ros::Publisher cloud2_pub_;
   ros::Publisher neighbor_pub_;
+
+  sensor_msgs::PointCloud2 cloud1_msg_;
+  sensor_msgs::PointCloud2 cloud2_msg_;
 
   ros::ServiceClient request_scans_client_;
   ros::ServiceClient reset_clouds_client_;
 
   bool manual_mode_;
+  ros::Timer timer_;
 };
 
 }
 
 #endif
+
+/*** TODO ***/
+/*
+ * 1. Fix NANs in Normals
+ * 1.5 Fix box filter
+ * 2. Visualize normals
+ * 3. Adaptive k for normals
+ * 4. Find good value for max_sqrt_dist in neighbor search
+*/

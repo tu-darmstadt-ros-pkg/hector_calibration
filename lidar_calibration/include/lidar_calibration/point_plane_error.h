@@ -59,10 +59,8 @@ struct PointPlaneError {
   template<typename T>
   bool operator()(const T* const rpy_rotation, const T* const translation, T* residuals) const{
     // residual = n' * (Rz*H*s1 - Rz*H*s2)
-    Affine3T<T> calibration;
-    calibration = Eigen::AngleAxis<T>(T(rpy_rotation[2]), Vector3T<T>::UnitZ())
-        * Eigen::AngleAxis<T>(T(rpy_rotation[1]), Vector3T<T>::UnitY())
-        * Eigen::AngleAxis<T>(T(rpy_rotation[0]), Vector3T<T>::UnitX());
+    Affine3T<T> calibration(Eigen::AngleAxis<T>(T(rpy_rotation[1]), Vector3T<T>::UnitZ())
+        * Eigen::AngleAxis<T>(T(rpy_rotation[0]), Vector3T<T>::UnitY()));
     calibration.translation() = Vector3T<T>(T(0.0), T(translation[0]), T(translation[1]));
 
     LaserPoint<T> s1t(s1_);
@@ -73,28 +71,6 @@ struct PointPlaneError {
     Vector3T<T> x1 = s1t.getInActuatorFrame(calibration);
     Vector3T<T> x2 = s2t.getInActuatorFrame(calibration);
 
-
-
-    // Translate x2
-//    T x2_t[3];
-//    x2_t[0] = T(x2_[0]);
-//    for (unsigned int i = 1; i < 3; i++) {
-//      x2_t[i] = T(x2_[i]) + translation[i];
-//    }
-
-//    // Rotate x2
-//    T rotation_matrix[9];
-//    ceres::EulerAnglesToRotationMatrix(rpy_rotation, 3, rotation_matrix);
-//    T quaternion[4];
-//    ceres::RotationMatrixToQuaternion(rotation_matrix, quaternion);
-//    T x2_r[3];
-//    ceres::QuaternionRotatePoint(quaternion, x2_t, x2_r);
-
-//    residuals[0] = T(0);
-//    for (unsigned int i = 0; i < 3; i++) {
-//      residuals[0] += T(normal_[i]) * (T(x1_[i]) - x2_r[i]);
-//    }
-
     residuals[0] = T(normal_.weight) * nt.transpose() * (x1 - x2);
 
     return true;
@@ -103,7 +79,7 @@ struct PointPlaneError {
   static ceres::CostFunction* Create(const LaserPoint<double>& s1, const LaserPoint<double>& s2, const WeightedNormal& normal)
   {
     ceres::CostFunction* cost_function =
-        new ceres::AutoDiffCostFunction<PointPlaneError, 1, 3, 2>(
+        new ceres::AutoDiffCostFunction<PointPlaneError, 1, 2, 2>(
           new PointPlaneError(s1, s2, normal));
 
     return cost_function;

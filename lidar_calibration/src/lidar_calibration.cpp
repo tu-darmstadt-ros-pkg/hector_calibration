@@ -35,11 +35,18 @@ pcl::PointCloud<T> remove_invalid_points(pcl::PointCloud<T>& cloud) {
   return cleaned_cloud;
 }
 
-void publish_cloud(const pcl::PointCloud<pcl::PointXYZ>& cloud, const ros::Publisher& pub) {
+void publishCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud, const ros::Publisher& pub) {
   sensor_msgs::PointCloud2 cloud_msg;
   pcl::toROSMsg(cloud, cloud_msg);
   cloud_msg.header.frame_id = "head_lidar_actuator_frame";
+  cloud_msg.header.stamp = ros::Time::now();
   pub.publish(cloud_msg);
+}
+
+void publishCloud(sensor_msgs::PointCloud2& cloud, const ros::Publisher& pub) {
+  cloud.header.frame_id = "head_lidar_actuator_frame";
+  cloud.header.stamp = ros::Time::now();
+  pub.publish(cloud);
 }
 
 template <class Iter, class Incr>
@@ -53,7 +60,7 @@ template <class Iter, class Incr>
     std::advance(curr, n);
   }
 
-void LidarCalibration::publish_neighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
+void LidarCalibration::publishNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
                        const pcl::PointCloud<pcl::PointXYZ>& cloud2,
                        const std::map<unsigned int, unsigned int> &mapping) const
 {
@@ -147,8 +154,8 @@ LidarCalibration::LidarCalibration(const ros::NodeHandle& nh) :
 {
   nh_ = nh;
 
-  mls_cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("mls_cloud", 1000);
-  results_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("results_cloud", 1000);
+  cloud1_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("result_cloud1", 1000);
+  cloud2_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("result_cloud2", 1000);
   neighbor_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("neighbor_mapping", 1000);
 
   request_scans_client_ = nh_.serviceClient<lidar_calibration::RequestScans>("head_lidar/request_scans");
@@ -161,6 +168,28 @@ void LidarCalibration::setOptions(CalibrationOptions options) {
 
 void LidarCalibration::setManualMode(bool manual) {
   manual_mode_ = manual;
+}
+
+
+void LidarCalibration::setPeriodicPublishing(bool status, double period) {
+  if (status) {
+    ROS_INFO_STREAM("[LidarCalibration] Enabled periodic cloud publishing.");
+    timer_ = nh_.createTimer(ros::Duration(period), &LidarCalibration::timerCallback, this, false);
+  } else {
+    ROS_INFO_STREAM("[LidarCalibration] Disabled periodic cloud publishing.");
+    timer_.stop();
+  }
+
+}
+
+
+void LidarCalibration::timerCallback(const ros::TimerEvent&) {
+  publishResults();
+}
+
+void LidarCalibration::publishResults() {
+  publishCloud(cloud1_msg_, cloud1_pub_);
+  publishCloud(cloud2_msg_, cloud2_pub_);
 }
 
 std::vector<LaserPoint<double> >
@@ -187,6 +216,11 @@ void LidarCalibration::requestScans(std::vector<LaserPoint<double> >& scan1,
   request_scans_client_.call(request, response);
   scan1 = msgToLaserPoints(response.scan_1, response.angles1);
   scan2 = msgToLaserPoints(response.scan_2, response.angles2);
+  if (scan2.size() < scan1.size()) { // Switch scan1 and scan2
+    std::vector<LaserPoint<double> >tmp = scan1;
+    scan1 = scan2;
+    scan2 = tmp;
+  }
 }
 
 void LidarCalibration::calibrate() {
@@ -194,9 +228,8 @@ void LidarCalibration::calibrate() {
   ROS_INFO_STREAM("Waiting for reset service...");
   reset_clouds_client_.waitForExistence();
   std_srvs::Empty empty_srv;
-  reset_clouds_client_.call(empty_srv);
+//  reset_clouds_client_.call(empty_srv);
 
-  // TODO request laser points with angles from cloud agg
   std::vector<LaserPoint<double> > scan1;
   std::vector<LaserPoint<double> > scan2;
   requestScans(scan1, scan2);
@@ -216,25 +249,29 @@ void LidarCalibration::calibrate() {
     ROS_INFO_STREAM("[LidarCalibration] Starting iteration " << (iteration_counter+1));
     // Transform laser points to actuator frame using current calibration
     applyCalibration(scan1, scan2, cloud1, cloud2, current_calibration);
-    publish_cloud(cloud1, results_pub_);
-    publish_cloud(cloud2, results_pub_);
+    pcl::toROSMsg(cloud1, cloud1_msg_);
+    pcl::toROSMsg(cloud2, cloud2_msg_);
+    publishCloud(cloud1_msg_, cloud1_pub_);
+    publishCloud(cloud2_msg_, cloud2_pub_);
 
     // Compute normals (TODO with weight)
     std::vector<WeightedNormal> normals = computeNormals(cloud1);
 
     // Find neighbors
     std::map<unsigned int, unsigned int> neighbor_mapping = findNeighbors(cloud1, cloud2);
-    publish_neighbors(cloud1, cloud2, neighbor_mapping);
+    publishNeighbors(cloud1, cloud2, neighbor_mapping);
 
     previous_calibration = current_calibration;
-    current_calibration = optimize_calibration(scan1, scan2, current_calibration, normals, neighbor_mapping);
+    current_calibration = optimizeCalibration(scan1, scan2, current_calibration, normals, neighbor_mapping);
     iteration_counter++;
     if (manual_mode_ && ros::ok()) {
       ROS_INFO_STREAM("Press [ENTER] to proceed with next iteration.");
       std::cin.get();
     }
   } while(ros::ok() && iteration_counter < options_.max_iterations
-          && (iteration_counter < 2 || !check_convergence(previous_calibration, current_calibration)));
+          && (iteration_counter < 2 || !checkConvergence(previous_calibration, current_calibration)));
+
+  ROS_INFO_STREAM("Calibration finished. Results: " << current_calibration.toString());
 }
 
 pcl::PointCloud<pcl::PointXYZ>
@@ -242,11 +279,11 @@ LidarCalibration::laserToActuatorCloud(const std::vector<LaserPoint<double> >& l
   pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
   Eigen::Affine3d calibration_transform = calibration.getTransform();
   for (unsigned int i = 0; i < laserpoints.size(); i++) {
-    Eigen::Vector3d x = laserpoints[i].getInActuatorFrame(calibration_transform);
+    Eigen::Vector3d actuator_point = laserpoints[i].getInActuatorFrame(calibration_transform);
     pcl::PointXYZ pcl_x;
-    pcl_x.x = x.x();
-    pcl_x.y = x.y();
-    pcl_x.z = x.z();
+    pcl_x.x = actuator_point.x();
+    pcl_x.y = actuator_point.y();
+    pcl_x.z = actuator_point.z();
     pcl_cloud.push_back(pcl_x);
   }
   return pcl_cloud;
@@ -263,8 +300,17 @@ void LidarCalibration::applyCalibration(const std::vector<LaserPoint<double> > &
   cloud2 = laserToActuatorCloud(scan2, calibration);
 }
 
+void fixNanInf(WeightedNormal& normal) {
+  if (std::isnan(normal.normal.x()) || std::isnan(normal.normal.y()) || std::isnan(normal.normal.z())
+      || std::isinf(normal.normal.x()) || std::isinf(normal.normal.y()) || std::isinf(normal.normal.z())) {
+    normal.normal = Eigen::Vector3d::Zero();
+    normal.weight = 0;
+  }
+}
+
 std::vector<WeightedNormal>
 LidarCalibration::computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) const{
+  ROS_INFO_STREAM("Computing normals.");
   pcl::NormalEstimationOMP<pcl::PointXYZ, pcl::PointNormal> ne;
 
   pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
@@ -287,6 +333,7 @@ LidarCalibration::computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) co
     WeightedNormal normal;
     normal.normal = Eigen::Vector3d(nx, ny, nz);
     // TODO normal weight
+    fixNanInf(normal);
     normals.push_back(normal);
   }
 
@@ -338,7 +385,7 @@ LidarCalibration::findNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
 }
 
 LidarCalibration::Calibration
-LidarCalibration::optimize_calibration(const std::vector<LaserPoint<double> >& scan1,
+LidarCalibration::optimizeCalibration(const std::vector<LaserPoint<double> >& scan1,
                                        const std::vector<LaserPoint<double> >& scan2,
                                        const Calibration& current_calibration,
                                        const std::vector<WeightedNormal> &normals,
@@ -352,7 +399,7 @@ LidarCalibration::optimize_calibration(const std::vector<LaserPoint<double> >& s
 
   ceres::Problem problem;
 
-  double rotation[3] = {current_calibration.roll, current_calibration.pitch, current_calibration.yaw};
+  double rotation[2] = {current_calibration.pitch, current_calibration.yaw};
   double translation[2] = {current_calibration.y, current_calibration.z};
 
   unsigned int residual_count = 0;
@@ -376,17 +423,16 @@ LidarCalibration::optimize_calibration(const std::vector<LaserPoint<double> >& s
   Calibration calibration;
   calibration.y = translation[0];
   calibration.z = translation[1];
-  calibration.roll = rotation[0];
-  calibration.pitch = rotation[1];
-  calibration.yaw = rotation[2];
+  calibration.pitch = rotation[0];
+  calibration.yaw = rotation[1];
 
 
-  ROS_INFO_STREAM("[LidarCalibration] Optimization result: " << calibration.to_string());
+  ROS_INFO_STREAM("[LidarCalibration] Optimization result: " << calibration.toString());
   return calibration;
 }
 
 
-bool LidarCalibration::check_convergence(const LidarCalibration::Calibration& prev_calibration,
+bool LidarCalibration::checkConvergence(const LidarCalibration::Calibration& prev_calibration,
                                          const LidarCalibration::Calibration& current_calibration) const {
   ROS_INFO_STREAM("Checking convergence.");
   return false;
