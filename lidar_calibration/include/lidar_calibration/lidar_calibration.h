@@ -16,6 +16,9 @@
 #include <pcl/features/normal_3d.h>
 #include <pcl/features/normal_3d_omp.h>
 
+// pcl vis
+#include <pcl/visualization/pcl_visualizer.h>
+
 // ros
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -40,6 +43,8 @@ public:
       yaw = 0;
     }
 
+    static constexpr double NUM_FREE_PARAMS = 5;
+
     Calibration(double _y, double _z, double _roll, double _pitch, double _yaw) {
       y = _y;
       z = _z;
@@ -50,7 +55,7 @@ public:
 
     std::string toString() {
       std::stringstream ss;
-      ss << "[" << y << ", " << z << "; " << roll << ", " << pitch << ", " << yaw << "]";
+      ss << "[y=" << y << ", z=" << z << "; roll=" << roll << ", pitch=" << pitch << ", yaw=" << yaw << "]";
       return ss.str();
     }
 
@@ -85,16 +90,14 @@ public:
 
   struct CalibrationOptions {
     CalibrationOptions() {
-      max_iterations = 15;
+      max_iterations = 20;
       max_sqrt_neighbor_dist = 0.1;
-      for (unsigned int i = 0; i < 5; i++) {
-        change_threshold[i] = 0;
-      }
+      sqrt_convergence_diff_thres = 1e-6;
     }
 
     unsigned int max_iterations;
     double max_sqrt_neighbor_dist;
-    double change_threshold[5];
+    double sqrt_convergence_diff_thres;
     Calibration init_calibration;
   };
 
@@ -105,6 +108,7 @@ public:
   void calibrate();
   void setManualMode(bool manual);
   void setPeriodicPublishing(bool status, double period);
+  void enableNormalVisualization(bool normals);
 
 private:
   void publishResults();
@@ -117,7 +121,7 @@ private:
                     std::vector<LaserPoint<double> >& scan2);
   std::vector<LaserPoint<double> > msgToLaserPoints(const sensor_msgs::PointCloud2& scan, const std_msgs::Float64MultiArray& angles);
 
-  std::vector<LaserPoint<double> > crop_cloud(const std::vector<LaserPoint<double> >& scan, double range);
+  std::vector<LaserPoint<double> > cropCloud(const std::vector<LaserPoint<double> >& scan, double range);
 
   void applyCalibration(const std::vector<LaserPoint<double> >& scan1,
                         const std::vector<LaserPoint<double> >& scan2,
@@ -127,6 +131,7 @@ private:
 
   pcl::PointCloud<pcl::PointXYZ> laserToActuatorCloud(const std::vector<LaserPoint<double> >& laserpoints, const Calibration& calibration) const;
   std::vector<WeightedNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) const;
+  void visualizeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud, const pcl::PointCloud<pcl::Normal>& normals) const;
   std::map<unsigned int, unsigned int> findNeighbors(const pcl::PointCloud<pcl::PointXYZ> &cloud1,
                                                      const pcl::PointCloud<pcl::PointXYZ> &cloud2) const;
   Calibration optimizeCalibration(const std::vector<LaserPoint<double> >& scan1,
@@ -136,6 +141,7 @@ private:
                                    const std::map<unsigned int, unsigned int> neighbor_mapping) const;
 
   bool checkConvergence(const Calibration& prev_calibration, const Calibration& current_calibration) const;
+  bool maxIterationsReached(unsigned int current_iterations) const;
 
   CalibrationOptions options_;
 
@@ -151,6 +157,7 @@ private:
   ros::ServiceClient reset_clouds_client_;
 
   bool manual_mode_;
+  bool vis_normals_;
   ros::Timer timer_;
 };
 
@@ -160,9 +167,6 @@ private:
 
 /*** TODO ***/
 /*
- * 1. Fix NANs in Normals
- * 1.5 Fix box filter
  * 2. Visualize normals
  * 3. Adaptive k for normals
- * 4. Find good value for max_sqrt_dist in neighbor search
 */
