@@ -2,6 +2,6 @@
 
 <launch>  
   <include file="$(find lidar_calibration)/launch/argonaut_calibration/calibrate_argonaut_common.launch">  
-    <arg name="sensor_identifier" value="front"/>  
+    <arg name="sensor_identifier" value="rear"/>  
   </include>   
 </launch>
