@@ -6,19 +6,23 @@
      
   <node pkg="vigir_laserscan_to_pointcloud" type="laserscan_to_pointcloud_node" name="scan_to_clouds_pub_node" output="screen">
     <remap from="/scan" to="/$(arg sensor_identifier)_spinning_lidar/scan"/>
-    <remap from="/scan_cloud" to="/head_lidar/scan_cloud"/>
+    <remap from="/scan_cloud" to="/$(arg sensor_identifier)_lidar/scan_cloud"/>
     <param name="use_high_fidelity_projection" value="true"/>
     <param name="target_frame" value="$(arg sensor_identifier)_laser_frame"/>
   </node>
   
-  <node pkg="tf" type="static_transform_publisher" name="head_lidar_actuator_frame_pub" args="0 0 0 0 -1.57 0 $(arg sensor_identifier)_spinning_lidar_root_link head_lidar_actuator_frame 100" />
+  <node pkg="tf" type="static_transform_publisher" name="$(arg sensor_identifier)_lidar_actuator_frame_pub" args="0 0 0 0 -1.57 0 $(arg sensor_identifier)_spinning_lidar_root_link $(arg sensor_identifier)_lidar_actuator_frame 100" />
+  
   <node pkg="tf" type="static_transform_publisher" name="$(arg sensor_identifier)_laser_frame_pub"          args="0 0 0 0 -1.57 0 $(arg sensor_identifier)_spinning_lidar_spin_link $(arg sensor_identifier)_laser_frame 100" />
   
-   <node pkg="lidar_calibration" type="cloud_aggregator_node" name="cloud_aggregator_node" output="screen" ns="head_lidar">
+   <node pkg="lidar_calibration" type="cloud_aggregator_node" name="cloud_aggregator_node" output="screen" ns="$(arg sensor_identifier)_lidar">
     <remap from="cloud" to="scan_cloud"/>
-    <!-- <remap from="/cloud_out" to="/head_lidar/half_scans"/> -->
-    <param name="target_frame" value="head_lidar_actuator_frame"/>
+    <param name="target_frame" value="$(arg sensor_identifier)_lidar_actuator_frame"/>
   </node> 
   
-  <node pkg="lidar_calibration" type="lidar_calibration_node" name="lidar_calibration_node" output="screen" args="--m"/>
+  <node pkg="lidar_calibration" type="lidar_calibration_node" name="lidar_calibration_node" output="screen" args="--m">
+    <param name="actuator_frame" value="$(arg sensor_identifier)_lidar_actuator_frame"/>
+    <remap from="request_scans" to="$(arg sensor_identifier)_lidar/request_scans" />
+    <remap from="reset_clouds" to="$(arg sensor_identifier)_lidar/reset_clouds" />
+  </node>
 </launch>

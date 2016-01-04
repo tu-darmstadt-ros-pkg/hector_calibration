@@ -153,6 +153,8 @@ private:
   sensor_msgs::PointCloud2 cloud1_msg_;
   sensor_msgs::PointCloud2 cloud2_msg_;
 
+  std::string actuator_frame_;
+
   ros::ServiceClient request_scans_client_;
   ros::ServiceClient reset_clouds_client_;
 

@@ -161,8 +161,10 @@ LidarCalibration::LidarCalibration(const ros::NodeHandle& nh) :
   cloud2_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("result_cloud2", 1000);
   neighbor_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("neighbor_mapping", 1000);
 
-  request_scans_client_ = nh_.serviceClient<lidar_calibration::RequestScans>("head_lidar/request_scans");
-  reset_clouds_client_ = nh_.serviceClient<std_srvs::Empty>("head_lidar/reset_clouds");
+  request_scans_client_ = nh_.serviceClient<lidar_calibration::RequestScans>("request_scans");
+  reset_clouds_client_ = nh_.serviceClient<std_srvs::Empty>("reset_clouds");
+
+  nh.param<std::string>("actuator_frame", actuator_frame_, "lidar_actuator_frame");
 }
 
 void LidarCalibration::setOptions(CalibrationOptions options) {

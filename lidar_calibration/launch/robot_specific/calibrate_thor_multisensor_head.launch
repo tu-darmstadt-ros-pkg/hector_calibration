@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+ <launch>  
+  <node pkg="vigir_laserscan_to_pointcloud" type="laserscan_to_pointcloud_node" name="scan_to_clouds_pub_node" output="screen">
+    <remap from="/scan" to="/head_lidar/scan"/>
+    <remap from="/scan_cloud" to="/head_lidar/scan_cloud"/>
+  </node>
+  
+  <node pkg="tf" type="static_transform_publisher" name="head_lidar_actuator_frame_pub" args="0.061 0 0.134 0 0 0 head_link head_lidar_actuator_frame 100" /> 
+  
+   <node pkg="lidar_calibration" type="cloud_aggregator_node" name="cloud_aggregator_node" output="screen" ns="head_lidar">
+    <remap from="cloud" to="scan_cloud"/>
+    <param name="target_frame" value="head_lidar_actuator_frame"/>
+  </node> 
+  
+  <node pkg="lidar_calibration" type="lidar_calibration_node" name="lidar_calibration_node" output="screen" args="">
+    <param name="actuator_frame" value="head_lidar_actuator_frame"/>
+    <remap from="request_scans" to="head_lidar/request_scans" />
+    <remap from="reset_clouds" to="head_lidar/reset_clouds" />
+  </node>
+</launch>
