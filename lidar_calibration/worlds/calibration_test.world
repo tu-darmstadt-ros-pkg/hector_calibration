@@ -1,7 +1,7 @@
-<sdf version='1.5'>
-  <world name='calibration_test'>
+<sdf version="1.4">
+  <world name="calibration_test">
     <!--<physics type="dart" /> -->
-    <light name='sun' type='directional'>
+    <light name="sun" type="directional">
       <cast_shadows>1</cast_shadows>
       <pose>0 0 10 0 -0 0</pose>
       <diffuse>0.8 0.8 0.8 1</diffuse>
@@ -14,10 +14,10 @@
       </attenuation>
       <direction>-0.5 0.1 -0.9</direction>
     </light>
-    <model name='ground_plane'>
+    <model name="ground_plane">
       <static>1</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <plane>
               <normal>0 0 1</normal>
@@ -32,13 +32,13 @@
               </ode>
             </friction>
             <contact>
-              <ode/>
+              <ode />
             </contact>
-            <bounce/>
+            <bounce />
           </surface>
           <max_contacts>10</max_contacts>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <cast_shadows>0</cast_shadows>
           <geometry>
             <plane>
@@ -58,7 +58,7 @@
         <gravity>1</gravity>
       </link>
     </model>
-    <physics name='default_physics' default='0' type='ode'>
+    <physics name="default_physics" default="0" type="ode">
       <max_step_size>0.001</max_step_size>
       <real_time_factor>1</real_time_factor>
       <real_time_update_rate>1000</real_time_update_rate>
@@ -77,11 +77,11 @@
       <elevation>0</elevation>
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
-    <model name='brick_box_3x1x3'>
+    <model name="brick_box_3x1x3">
       <static>1</static>
-      <link name='chassis'>
+      <link name="chassis">
         <pose>0 0 1.5 0 -0 0</pose>
-        <collision name='collision'>
+        <collision name="collision">
           <geometry>
             <box>
               <size>3 1 3</size>
@@ -90,15 +90,15 @@
           <max_contacts>10</max_contacts>
           <surface>
             <contact>
-              <ode/>
+              <ode />
             </contact>
-            <bounce/>
+            <bounce />
             <friction>
-              <ode/>
+              <ode />
             </friction>
           </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <mesh>
               <uri>model://brick_box_3x1x3/meshes/simple_box.dae</uri>
@@ -119,50 +119,50 @@
       </link>
       <pose>2 0 0 0 -0 0</pose>
     </model>
-    <state world_name='default'>
+    <state world_name="default">
       <sim_time>835 795000000</sim_time>
       <real_time>840 959079969</real_time>
       <wall_time>1447755561 735103974</wall_time>
       <iterations>835795</iterations>
-      <model name='brick_box_3x1x3'>
+      <model name="brick_box_3x1x3">
         <pose>2 0 0 0 0 -1.56518</pose>
-        <link name='chassis'>
+        <link name="chassis">
           <pose>2 0 1.5 0 0 -1.56518</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
-      <model name='brick_box_3x1x3_0'>
+      <model name="brick_box_3x1x3_0">
         <pose>1 2 0 0 -0 0</pose>
-        <link name='chassis'>
+        <link name="chassis">
           <pose>1 2 1.5 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
-      <model name='brick_box_3x1x3_1'>
+      <model name="brick_box_3x1x3_1">
         <pose>1 -2 0 0 -0 0</pose>
-        <link name='chassis'>
+        <link name="chassis">
           <pose>1 -2 1.5 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
-      <model name='brick_box_3x1x3_2'>
+      <model name="brick_box_3x1x3_2">
         <pose>0.891273 1.48188 3.47778 1.58283 -0 0</pose>
-        <link name='chassis'>
+        <link name="chassis">
           <pose>0.891273 -0.018014 3.45973 1.58283 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
-      <model name='ground_plane'>
+      <model name="ground_plane">
         <pose>0 0 0 0 -0 0</pose>
-        <link name='link'>
+        <link name="link">
           <pose>0 0 0 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
@@ -170,11 +170,11 @@
         </link>
       </model>
     </state>
-    <model name='brick_box_3x1x3_0'>
+    <model name="brick_box_3x1x3_0">
       <static>1</static>
-      <link name='chassis'>
+      <link name="chassis">
         <pose>0 0 1.5 0 -0 0</pose>
-        <collision name='collision'>
+        <collision name="collision">
           <geometry>
             <box>
               <size>3 1 3</size>
@@ -183,15 +183,15 @@
           <max_contacts>10</max_contacts>
           <surface>
             <contact>
-              <ode/>
+              <ode />
             </contact>
-            <bounce/>
+            <bounce />
             <friction>
-              <ode/>
+              <ode />
             </friction>
           </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <mesh>
               <uri>model://brick_box_3x1x3/meshes/simple_box.dae</uri>
@@ -212,11 +212,11 @@
       </link>
       <pose>1 2 0 0 -0 0</pose>
     </model>
-    <model name='brick_box_3x1x3_1'>
+    <model name="brick_box_3x1x3_1">
       <static>1</static>
-      <link name='chassis'>
+      <link name="chassis">
         <pose>0 0 1.5 0 -0 0</pose>
-        <collision name='collision'>
+        <collision name="collision">
           <geometry>
             <box>
               <size>3 1 3</size>
@@ -225,15 +225,15 @@
           <max_contacts>10</max_contacts>
           <surface>
             <contact>
-              <ode/>
+              <ode />
             </contact>
-            <bounce/>
+            <bounce />
             <friction>
-              <ode/>
+              <ode />
             </friction>
           </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <mesh>
               <uri>model://brick_box_3x1x3/meshes/simple_box.dae</uri>
@@ -254,11 +254,11 @@
       </link>
       <pose>1 -2 0 0 -0 0</pose>
     </model>
-    <model name='brick_box_3x1x3_2'>
+    <model name="brick_box_3x1x3_2">
       <static>1</static>
-      <link name='chassis'>
+      <link name="chassis">
         <pose>0 0 1.5 0 -0 0</pose>
-        <collision name='collision'>
+        <collision name="collision">
           <geometry>
             <box>
               <size>3 1 3</size>
@@ -267,15 +267,15 @@
           <max_contacts>10</max_contacts>
           <surface>
             <contact>
-              <ode/>
+              <ode />
             </contact>
-            <bounce/>
+            <bounce />
             <friction>
-              <ode/>
+              <ode />
             </friction>
           </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <mesh>
               <uri>model://brick_box_3x1x3/meshes/simple_box.dae</uri>
@@ -296,8 +296,8 @@
       </link>
       <pose>1 4 0 0 -0 0</pose>
     </model>
-    <gui fullscreen='0'>
-      <camera name='user_camera'>
+    <gui fullscreen="0">
+      <camera name="user_camera">
         <pose>-7.4509 -0.102207 3.59189 0 0.225282 -0.102096</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
