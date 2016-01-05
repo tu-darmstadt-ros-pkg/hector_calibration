@@ -1,3 +1,31 @@
+//=================================================================================================
+// Copyright (c) 2012, Martin Oehler, TU Darmstadt
+// All rights reserved.
+
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//     * Neither the name of the Simulation, Systems Optimization and Robotics
+//       group, TU Darmstadt nor the names of its contributors may be used to
+//       endorse or promote products derived from this software without
+//       specific prior written permission.
+
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//=================================================================================================
+
 #ifndef LIDAR_CALIBRATION_H
 #define LIDAR_CALIBRATION_H
 
@@ -104,7 +132,7 @@ public:
   LidarCalibration(const ros::NodeHandle& nh);
 
   void setOptions(CalibrationOptions options);
-  bool loadOptionsFromParamServer(const ros::NodeHandle& nh);
+  bool loadOptionsFromParamServer();
   void calibrate();
   void setManualMode(bool manual);
   void setPeriodicPublishing(bool status, double period);
@@ -112,6 +140,8 @@ public:
 
 private:
   void publishResults();
+  void publishCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud, const ros::Publisher& pub);
+  void publishCloud(sensor_msgs::PointCloud2& cloud, const ros::Publisher& pub);
   void timerCallback(const ros::TimerEvent&);
   void publishNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
                          const pcl::PointCloud<pcl::PointXYZ>& cloud2,
@@ -169,6 +199,9 @@ private:
 
 /*** TODO ***/
 /*
- * 2. Visualize normals
- * 3. Adaptive k for normals
+ * 1. Adaptive normals
+ * 2. Detect ground plane for roll calibration
+ * 3. add offset for lidar orientation
+ * 4. save calibration to XML with timestamp
+ * 5. calibration at predefined place, write script to copy new calibration
 */

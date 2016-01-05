@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
   ;
 
   boost::program_options::variables_map vmap;
-  boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vmap);
+  boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(desc).allow_unregistered().run(), vmap);
   boost::program_options::notify(vmap);
 
   if (vmap.count("help")) {
@@ -32,10 +32,7 @@ int main(int argc, char** argv) {
   }
 
   calibration.setPeriodicPublishing(true, 5);
-
-//  hector_calibration::LidarCalibration::CalibrationOptions options;
-//  options.init_calibration = hector_calibration::LidarCalibration::Calibration(0, 0, 0, 0, 0);
-//  calibration.setOptions(options);
+  calibration.loadOptionsFromParamServer();
 
   calibration.calibrate();
 

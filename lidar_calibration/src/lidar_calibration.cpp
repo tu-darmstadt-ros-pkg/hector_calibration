@@ -35,19 +35,6 @@ pcl::PointCloud<T> removeInvalidPoints(pcl::PointCloud<T>& cloud) {
   return cleaned_cloud;
 }
 
-void publishCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud, const ros::Publisher& pub) {
-  sensor_msgs::PointCloud2 cloud_msg;
-  pcl::toROSMsg(cloud, cloud_msg);
-  cloud_msg.header.frame_id = "head_lidar_actuator_frame";
-  cloud_msg.header.stamp = ros::Time::now();
-  pub.publish(cloud_msg);
-}
-
-void publishCloud(sensor_msgs::PointCloud2& cloud, const ros::Publisher& pub) {
-  cloud.header.frame_id = "head_lidar_actuator_frame";
-  cloud.header.stamp = ros::Time::now();
-  pub.publish(cloud);
-}
 
 template <class Iter, class Incr>
   void safe_advance(Iter& curr, const Iter& end, Incr n)
@@ -59,6 +46,20 @@ template <class Iter, class Incr>
     }
     std::advance(curr, n);
   }
+
+void LidarCalibration::publishCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud, const ros::Publisher& pub) {
+  sensor_msgs::PointCloud2 cloud_msg;
+  pcl::toROSMsg(cloud, cloud_msg);
+  cloud_msg.header.frame_id = actuator_frame_;
+  cloud_msg.header.stamp = ros::Time::now();
+  pub.publish(cloud_msg);
+}
+
+void LidarCalibration::publishCloud(sensor_msgs::PointCloud2& cloud, const ros::Publisher& pub) {
+  cloud.header.frame_id = actuator_frame_;
+  cloud.header.stamp = ros::Time::now();
+  pub.publish(cloud);
+}
 
 void LidarCalibration::publishNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
                        const pcl::PointCloud<pcl::PointXYZ>& cloud2,
@@ -72,7 +73,7 @@ void LidarCalibration::publishNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cl
        it != mapping.end();
        safe_advance<std::map<unsigned int, unsigned int>::const_iterator, unsigned int>(it, mapping.end(), step)) {
     visualization_msgs::Marker marker;
-    marker.header.frame_id = "head_lidar_actuator_frame";
+    marker.header.frame_id = actuator_frame_;
     marker.header.stamp = ros::Time();
     marker.ns = "neighbor_mapping";
     marker.id = id_cnt++;
@@ -164,7 +165,17 @@ LidarCalibration::LidarCalibration(const ros::NodeHandle& nh) :
   request_scans_client_ = nh_.serviceClient<lidar_calibration::RequestScans>("request_scans");
   reset_clouds_client_ = nh_.serviceClient<std_srvs::Empty>("reset_clouds");
 
-  nh.param<std::string>("actuator_frame", actuator_frame_, "lidar_actuator_frame");
+  ros::NodeHandle pnh("~");
+  pnh.param<std::string>("actuator_frame", actuator_frame_, "lidar_actuator_frame");
+}
+
+bool LidarCalibration::loadOptionsFromParamServer() {
+  int max_iterations;
+  ros::NodeHandle pnh("~");
+  pnh.param<int>("max_iterations", max_iterations, 20);
+  max_iterations = options_.max_iterations;
+  pnh.param<double>("max_sqrt_neighbor_dist", options_.max_sqrt_neighbor_dist, 0.1);
+  pnh.param<double>("sqrt_convergence_diff_thres", options_.sqrt_convergence_diff_thres, 1e-6);
 }
 
 void LidarCalibration::setOptions(CalibrationOptions options) {
