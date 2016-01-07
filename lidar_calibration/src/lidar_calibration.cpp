@@ -74,7 +74,7 @@ void LidarCalibration::publishNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cl
        safe_advance<std::map<unsigned int, unsigned int>::const_iterator, unsigned int>(it, mapping.end(), step)) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = actuator_frame_;
-    marker.header.stamp = ros::Time();
+    marker.header.stamp = ros::Time::now();
     marker.ns = "neighbor_mapping";
     marker.id = id_cnt++;
     marker.type = visualization_msgs::Marker::ARROW;
@@ -161,6 +161,7 @@ LidarCalibration::LidarCalibration(const ros::NodeHandle& nh) :
   cloud1_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("result_cloud1", 1000);
   cloud2_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("result_cloud2", 1000);
   neighbor_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("neighbor_mapping", 1000);
+  planarity_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("planarity", 1000);
 
   request_scans_client_ = nh_.serviceClient<lidar_calibration::RequestScans>("request_scans");
   reset_clouds_client_ = nh_.serviceClient<std_srvs::Empty>("reset_clouds");
@@ -176,6 +177,7 @@ bool LidarCalibration::loadOptionsFromParamServer() {
   max_iterations = options_.max_iterations;
   pnh.param<double>("max_sqrt_neighbor_dist", options_.max_sqrt_neighbor_dist, 0.1);
   pnh.param<double>("sqrt_convergence_diff_thres", options_.sqrt_convergence_diff_thres, 1e-6);
+  pnh.param<double>("normals_radius", options_.normals_radius, 0.07);
 }
 
 void LidarCalibration::setOptions(CalibrationOptions options) {
@@ -268,7 +270,7 @@ void LidarCalibration::calibrate() {
     publishCloud(cloud1_msg_, cloud1_pub_);
     publishCloud(cloud2_msg_, cloud2_pub_);
 
-    // Compute normals (TODO with weight)
+    // Compute normals with weight
     std::vector<WeightedNormal> normals = computeNormals(cloud1);
 
     // Find neighbors
@@ -341,17 +343,33 @@ LidarCalibration::computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) co
     // Compute neighbors
     std::vector<int> indices;
     std::vector<float> sqrt_dist;
-    kdtree.radiusSearch(p, 0.07, indices, sqrt_dist);
+    kdtree.radiusSearch(p, options_.normals_radius, indices, sqrt_dist);
 
-    float nx, ny, nz, curvature;
-    ne.computePointNormal(cloud, indices, nx, ny, nz, curvature);
+    double weight;
+    Eigen::Vector4f plane_parameters;
+    Eigen::Matrix3f covariance_matrix;
+    Eigen::Vector4f xyz_centroid;
+    if (indices.size () < 3 || pcl::computeMeanAndCovarianceMatrix (cloud, indices, covariance_matrix, xyz_centroid) == 0){
+      plane_parameters.setConstant(0);
+      weight = 0;
+    } else {
+      Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eig(covariance_matrix);
+      const Eigen::Vector3f& eigen_values(eig.eigenvalues());
+
+      weight = 2* (eigen_values(1) - eigen_values(0)) / eigen_values.sum();
+      plane_parameters.block<3,1>(0, 0) = eig.eigenvectors().col(0);
+      plane_parameters[3] = 1;
+      pcl::flipNormalTowardsViewpoint(cloud[i], 0.0, 0.0, 0.0, plane_parameters);
+    }
+
     WeightedNormal normal;
-    normal.normal = Eigen::Vector3d(nx, ny, nz);
+    normal.normal = Eigen::Vector3d(plane_parameters[0], plane_parameters[1], plane_parameters[2]);
     if (vis_normals_) {
-      pcl::Normal pcl_normal(nx, ny, nz);
+      pcl::Normal pcl_normal(plane_parameters[0], plane_parameters[1], plane_parameters[2]);
       pcl_normals.push_back(pcl_normal);
     }
-    // TODO normal weight
+
+    normal.weight = weight;
     fixNanInf(normal);
     normals.push_back(normal);
   }
@@ -360,7 +378,64 @@ LidarCalibration::computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) co
     visualizeNormals(cloud, pcl_normals);
   }
 
+  visualizeCurvature(cloud, normals);
+
   return normals;
+}
+
+void LidarCalibration::visualizeCurvature(const pcl::PointCloud<pcl::PointXYZ> &cloud,
+                                          const std::vector<WeightedNormal> &normals) const
+{
+  if (normals.size() != cloud.size()) {
+    ROS_ERROR_STREAM("Size of cloud (" << cloud.size() << ") doesn't match size of normals (" << normals.size() << ").");
+    return;
+  }
+  double thres = 0.1;
+  int id_cnt = 0;
+
+  int step = 100;
+  visualization_msgs::MarkerArray marker_array;
+  for (unsigned int i = 0; i < normals.size(); i++) {
+    if (normals[i].weight <= thres && normals[i].weight != 0) {
+      if (step != 0) {
+        step--;
+        continue;
+      }
+      step = 100;
+      visualization_msgs::Marker marker;
+      marker.header.frame_id = actuator_frame_;
+      marker.header.stamp = ros::Time::now();
+      marker.ns = "planarity";
+      marker.id = id_cnt++;
+      marker.type = visualization_msgs::Marker::ARROW;
+      marker.action = visualization_msgs::Marker::ADD;
+
+      marker.scale.x = 0.01;
+      marker.scale.y = 0.01;
+      marker.scale.z = 0.01;
+      marker.color.a = 1.0;
+      marker.color.r = 1.0;
+      marker.color.g = 0.0;
+      marker.color.b = 1.0;
+
+      geometry_msgs::Point point1;
+      geometry_msgs::Point point2;
+
+      point1.x = (double) cloud[i].x;
+      point1.y = (double) cloud[i].y;
+      point1.z = (double) cloud[i].z;
+
+      point2.x = (double) cloud[i].x + 0.2* normals[i].normal.x();
+      point2.y = (double) cloud[i].y + 0.2* normals[i].normal.y();
+      point2.z = (double) cloud[i].z + 0.2* normals[i].normal.z();
+      marker.points.push_back(point1);
+      marker.points.push_back(point2);
+      marker_array.markers.push_back(marker);
+    }
+
+  }
+  ROS_INFO_STREAM("Drawing " << id_cnt << " normals.");
+  planarity_pub_.publish(marker_array);
 }
 
 void LidarCalibration::visualizeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud,

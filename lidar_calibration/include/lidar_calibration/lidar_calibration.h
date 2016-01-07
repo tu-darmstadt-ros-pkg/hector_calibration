@@ -121,11 +121,13 @@ public:
       max_iterations = 20;
       max_sqrt_neighbor_dist = 0.1;
       sqrt_convergence_diff_thres = 1e-6;
+      normals_radius = 0.07;
     }
 
     unsigned int max_iterations;
     double max_sqrt_neighbor_dist;
     double sqrt_convergence_diff_thres;
+    double normals_radius;
     Calibration init_calibration;
   };
 
@@ -162,6 +164,8 @@ private:
   pcl::PointCloud<pcl::PointXYZ> laserToActuatorCloud(const std::vector<LaserPoint<double> >& laserpoints, const Calibration& calibration) const;
   std::vector<WeightedNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) const;
   void visualizeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud, const pcl::PointCloud<pcl::Normal>& normals) const;
+  void visualizeCurvature(const pcl::PointCloud<pcl::PointXYZ> &cloud, const std::vector<WeightedNormal> &normals) const;
+
   std::map<unsigned int, unsigned int> findNeighbors(const pcl::PointCloud<pcl::PointXYZ> &cloud1,
                                                      const pcl::PointCloud<pcl::PointXYZ> &cloud2) const;
   Calibration optimizeCalibration(const std::vector<LaserPoint<double> >& scan1,
@@ -179,6 +183,7 @@ private:
   ros::Publisher cloud1_pub_;
   ros::Publisher cloud2_pub_;
   ros::Publisher neighbor_pub_;
+  ros::Publisher planarity_pub_;
 
   sensor_msgs::PointCloud2 cloud1_msg_;
   sensor_msgs::PointCloud2 cloud2_msg_;
@@ -199,7 +204,7 @@ private:
 
 /*** TODO ***/
 /*
- * 1. Adaptive normals
+ * 1. Accumulate point clouds over multipe spins
  * 2. Detect ground plane for roll calibration
  * 3. add offset for lidar orientation
  * 4. save calibration to XML with timestamp

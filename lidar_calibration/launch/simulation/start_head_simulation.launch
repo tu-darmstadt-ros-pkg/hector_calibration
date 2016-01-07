@@ -11,7 +11,7 @@
       <arg name="world_name" value="$(arg world)"/>
     </include>
 
-    <include file="$(find lidar_calibration)/launch/spawn_head_gazebo.launch"/>
+    <include file="$(find lidar_calibration)/launch/simulation/spawn_head_gazebo.launch"/>
     <include file="$(find hector_multisensor_head_driver)/launch/load_simulated_controller.launch"/>
 
 </launch>

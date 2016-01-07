@@ -12,8 +12,9 @@
     <param name="target_frame" value="head_lidar_actuator_frame"/>
   </node> 
   
-  <node pkg="lidar_calibration" type="lidar_calibration_node" name="lidar_calibration_node" output="screen" args="">
+  <node pkg="lidar_calibration" type="lidar_calibration_node" name="lidar_calibration_node" output="screen" args="--m">
     <param name="actuator_frame" value="head_lidar_actuator_frame"/>
+    <param name="normals_radius" value="0.15"/>
     <remap from="request_scans" to="head_lidar/request_scans" />
     <remap from="reset_clouds" to="head_lidar/reset_clouds" />
   </node>
