@@ -328,8 +328,6 @@ void fixNanInf(WeightedNormal& normal) {
 std::vector<WeightedNormal>
 LidarCalibration::computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) const{
 //  ROS_INFO_STREAM("Computing normals.");
-  pcl::NormalEstimationOMP<pcl::PointXYZ, pcl::PointNormal> ne;
-
   pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::copyPointCloud(cloud, *cloud_ptr);
@@ -378,12 +376,12 @@ LidarCalibration::computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) co
     visualizeNormals(cloud, pcl_normals);
   }
 
-  visualizeCurvature(cloud, normals);
+  visualizePlanarity(cloud, normals);
 
   return normals;
 }
 
-void LidarCalibration::visualizeCurvature(const pcl::PointCloud<pcl::PointXYZ> &cloud,
+void LidarCalibration::visualizePlanarity(const pcl::PointCloud<pcl::PointXYZ> &cloud,
                                           const std::vector<WeightedNormal> &normals) const
 {
   if (normals.size() != cloud.size()) {

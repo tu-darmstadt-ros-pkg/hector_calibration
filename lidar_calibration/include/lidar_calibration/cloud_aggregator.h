@@ -66,8 +66,6 @@ private:
   void timerCallback(const ros::TimerEvent&);
   void cloudCallback (const sensor_msgs::PointCloud2::ConstPtr& cloud_in);
   void resetCallback(const std_msgs::Empty::ConstPtr&);
-  // array contains y, z, roll, pitch, yaw
-  void calibrationCallback(const std_msgs::Float64MultiArrayConstPtr& array_ptr);
   bool requestScansCallback(lidar_calibration::RequestScans::Request& request,
                               lidar_calibration::RequestScans::Response& response);
   bool resetSrvCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
@@ -75,6 +73,7 @@ private:
 
 protected:
   void resetClouds();
+  void savePointCloud(const sensor_msgs::PointCloud2::ConstPtr& pc_msg, const tf::StampedTransform& transform);
   void transformCloud(const std::vector<pc_roll_tuple>& cloud_agg, sensor_msgs::PointCloud2& cloud);
   void scanToMsg(const std::vector<pc_roll_tuple>& cloud_agg, sensor_msgs::PointCloud2& scan, std_msgs::Float64MultiArray& angles);
   ros::NodeHandle nh_;
@@ -95,6 +94,7 @@ protected:
   double prior_roll_angle_;
 
   unsigned int captured_clouds_;
+  int rotations_;
 
   std::vector<pc_roll_tuple> cloud_agg1_;
   std::vector<pc_roll_tuple> cloud_agg2_;

@@ -164,7 +164,7 @@ private:
   pcl::PointCloud<pcl::PointXYZ> laserToActuatorCloud(const std::vector<LaserPoint<double> >& laserpoints, const Calibration& calibration) const;
   std::vector<WeightedNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) const;
   void visualizeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud, const pcl::PointCloud<pcl::Normal>& normals) const;
-  void visualizeCurvature(const pcl::PointCloud<pcl::PointXYZ> &cloud, const std::vector<WeightedNormal> &normals) const;
+  void visualizePlanarity(const pcl::PointCloud<pcl::PointXYZ> &cloud, const std::vector<WeightedNormal> &normals) const;
 
   std::map<unsigned int, unsigned int> findNeighbors(const pcl::PointCloud<pcl::PointXYZ> &cloud1,
                                                      const pcl::PointCloud<pcl::PointXYZ> &cloud2) const;
@@ -204,9 +204,10 @@ private:
 
 /*** TODO ***/
 /*
- * 1. Accumulate point clouds over multipe spins
  * 2. Detect ground plane for roll calibration
  * 3. add offset for lidar orientation
  * 4. save calibration to XML with timestamp
  * 5. calibration at predefined place, write script to copy new calibration
+ * 6. parallelize normal estimation (OpenMP)
+ *   --https://github.com/PointCloudLibrary/pcl/blob/a654fe4188382416c99322cafbd9319c59a7355c/features/include/pcl/features/impl/normal_3d_omp.hpp
 */

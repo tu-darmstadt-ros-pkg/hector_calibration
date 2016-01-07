@@ -14,9 +14,12 @@ namespace hector_calibration {
 
     ros::NodeHandle pnh_("~");
     pnh_.param("target_frame", p_target_frame_, std::string("base_link"));
+    pnh_.param("rotations", rotations_, 1);
 
     tfl_.reset(new tf::TransformListener());
-    wait_duration_ = ros::Duration(0.5);
+    double tf_wait_duration;
+    pnh_.param("tf_wait_duration", tf_wait_duration, 0.5);
+    wait_duration_ = ros::Duration(tf_wait_duration);
   }
 
   void CalibrationCloudAggregator::publishClouds() {
@@ -111,12 +114,33 @@ namespace hector_calibration {
     return true;
   }
 
-  void CalibrationCloudAggregator::cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_in) {
-    if (captured_clouds_ > 2) {
-      // don't need more than 3 half scans (dump first)
+
+  void CalibrationCloudAggregator::savePointCloud(const sensor_msgs::PointCloud2::ConstPtr& pc_msg, const tf::StampedTransform &transform) {
+    if (captured_clouds_ == 0) { // skip first half scan
       return;
     }
-    if (tfl_->waitForTransform(p_target_frame_, cloud_in->header.frame_id, cloud_in->header.stamp, wait_duration_)){
+
+    boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ> > pc;
+    pc.reset(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::fromROSMsg(*pc_msg, *pc);
+
+    double roll, pitch, yaw;
+    tf::Matrix3x3(transform.getRotation()).getRPY(roll, pitch, yaw);
+
+    // add point cloud to current aggregator
+    if (captured_clouds_ % 2 == 1) {
+      cloud_agg1_.push_back(pc_roll_tuple(pc, roll));
+    } else if (captured_clouds_ % 2 == 0) {
+      cloud_agg2_.push_back(pc_roll_tuple(pc, roll));
+    }
+  }
+
+  void CalibrationCloudAggregator::cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_in) {
+    if (captured_clouds_ > rotations_*2) {
+      // don't need more than rotations*2 half scans (dump first)
+      return;
+    }
+    if (tfl_->waitForTransform(p_target_frame_, cloud_in->header.frame_id, cloud_in->header.stamp, wait_duration_)) {
       tf::StampedTransform transform;
       tfl_->lookupTransform(p_target_frame_, cloud_in->header.frame_id, cloud_in->header.stamp, transform);
 
@@ -127,33 +151,17 @@ namespace hector_calibration {
           ((prior_roll_angle_ < ( M_PI*0.5)) && (roll > ( M_PI*0.5)))){
         // mark cloud as complete
         captured_clouds_++;
+        savePointCloud(cloud_in, transform);
         ROS_INFO_STREAM("[CloudAggregator] Captured half scan number: " << captured_clouds_);
-        if (captured_clouds_ == 3) {
+        if (captured_clouds_ == rotations_*2 + 1) {
           request_scans_srv_ = nh_.advertiseService("request_scans", &CalibrationCloudAggregator::requestScansCallback, this);
           transformCloud(cloud_agg1_, cloud1_);
           transformCloud(cloud_agg2_, cloud2_);
           publishClouds();
         }
       } else {
-        if (captured_clouds_ == 0) { // skip first half scan
-          return;
-        }
-        // add point cloud to current aggregator
-        boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ> > pc;
-        pc.reset(new pcl::PointCloud<pcl::PointXYZ>());
-        pcl::fromROSMsg(*cloud_in, *pc);
-
-        double roll, pitch, yaw;
-        tf::Matrix3x3(transform.getRotation()).getRPY(roll, pitch, yaw);
-
-        // skip first half scan
-        if (captured_clouds_ == 1) {
-          cloud_agg1_.push_back(pc_roll_tuple(pc, roll));
-        } else if (captured_clouds_ == 2) {
-          cloud_agg2_.push_back(pc_roll_tuple(pc, roll));
-        }
+        savePointCloud(cloud_in, transform);
       }
-
       prior_roll_angle_ = roll;
     }else{
       ROS_ERROR_THROTTLE(5.0, "Cannot transform from sensor %s to target %s . This message is throttled.",
