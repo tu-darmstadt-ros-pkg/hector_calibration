@@ -160,6 +160,7 @@ LidarCalibration::LidarCalibration(const ros::NodeHandle& nh) :
 {
   cloud1_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("result_cloud1", 1000);
   cloud2_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("result_cloud2", 1000);
+  ground_plane_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("ground_plane", 1000);
   neighbor_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("neighbor_mapping", 1000);
   planarity_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("planarity", 1000);
 
@@ -178,6 +179,7 @@ bool LidarCalibration::loadOptionsFromParamServer() {
   pnh.param<double>("max_sqrt_neighbor_dist", options_.max_sqrt_neighbor_dist, 0.1);
   pnh.param<double>("sqrt_convergence_diff_thres", options_.sqrt_convergence_diff_thres, 1e-6);
   pnh.param<double>("normals_radius", options_.normals_radius, 0.07);
+  pnh.param<bool>("detect_ground_plane", options_.detect_ground_plane, true);
 }
 
 void LidarCalibration::setOptions(CalibrationOptions options) {
@@ -287,6 +289,15 @@ void LidarCalibration::calibrate() {
   } while(ros::ok() && !maxIterationsReached(iteration_counter)
           && (iteration_counter < 2 || !checkConvergence(previous_calibration, current_calibration)));
 
+  if (options_.detect_ground_plane) {
+    current_calibration.roll = detectGroundPlane(cloud1, cloud2);
+    applyCalibration(scan1, scan2, cloud1, cloud2, current_calibration);
+    pcl::toROSMsg(cloud1, cloud1_msg_);
+    pcl::toROSMsg(cloud2, cloud2_msg_);
+    publishCloud(cloud1_msg_, cloud1_pub_);
+    publishCloud(cloud2_msg_, cloud2_pub_);
+  }
+
   ROS_INFO_STREAM("Result: " << current_calibration.toString());
 }
 
@@ -311,8 +322,7 @@ void LidarCalibration::applyCalibration(const std::vector<LaserPoint<double> > &
                                         pcl::PointCloud<pcl::PointXYZ>& cloud2,
                                         const Calibration& calibration)
 {
-//  ROS_INFO_STREAM("Applying new calibration.");
-  // TODO iterate over scans and transform them to actuator frame using current calibration
+//  ROS_INFO_STREAM("Applying new calibration.");s
   cloud1 = laserToActuatorCloud(scan1, calibration);
   cloud2 = laserToActuatorCloud(scan2, calibration);
 }
@@ -530,6 +540,56 @@ LidarCalibration::optimizeCalibration(const std::vector<LaserPoint<double> >& sc
 
   ROS_INFO_STREAM("Optimization result: " << calibration.toString());
   return calibration;
+}
+
+double LidarCalibration::detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> &cloud1,
+                                           const pcl::PointCloud<pcl::PointXYZ> &cloud2) const
+{
+  // merge point clouds
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>());
+  pcl::copyPointCloud(cloud1, *cloud_ptr);
+  *cloud_ptr += cloud2;
+
+  // init segmentation
+  pcl::ModelCoefficients coefficients;
+  pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
+
+  pcl::SACSegmentation<pcl::PointXYZ> seg;
+  // segmentation parameters
+  seg.setOptimizeCoefficients (true);
+
+  seg.setAxis(Eigen::Vector3f(0,0,1)); // ground is along z-axis of actuator frame (assumption)
+  seg.setEpsAngle(M_PI/4); // 45° offset from model
+  seg.setModelType(pcl::SACMODEL_PERPENDICULAR_PLANE);
+  seg.setMethodType(pcl::SAC_RANSAC);
+  seg.setDistanceThreshold(0.05);
+  seg.setMaxIterations(1000);
+
+  seg.setInputCloud(cloud_ptr);
+  seg.segment(*inliers, coefficients);
+
+  // Extract ground plane inliers
+  pcl::ExtractIndices<pcl::PointXYZ> extract;
+  extract.setInputCloud(cloud_ptr);
+  extract.setIndices(inliers);
+
+  pcl::PointCloud<pcl::PointXYZ> ground_plane;
+  extract.filter(ground_plane);
+
+  sensor_msgs::PointCloud2 ground_plane_msg;
+  pcl::toROSMsg(ground_plane, ground_plane_msg);
+  ground_plane_msg.header.frame_id = actuator_frame_;
+  ground_plane_msg.header.stamp = ros::Time::now();
+
+  ground_plane_pub_.publish(ground_plane_msg);
+
+  // Calculate angle from ground plane to actuator frame around x-axis
+  double ny = coefficients.values[1]; double nz = coefficients.values[2];
+
+  double roll = std::acos(nz/std::sqrt(std::pow(ny, 2) + std::pow(nz, 2)));
+  // double pitch = M_PI/2 - std::acos(nx/std::sqrt(std::pow(nx, 2) + std::pow(nz, 2))); // not neededs
+
+  return roll;
 }
 
 

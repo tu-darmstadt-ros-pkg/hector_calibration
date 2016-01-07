@@ -38,11 +38,16 @@
 #include <pcl/common/transforms.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/search/kdtree.h>
-#include <pcl/surface/mls.h>
 #include <pcl/filters/filter.h>
 #include <pcl/filters/crop_box.h>
 #include <pcl/features/normal_3d.h>
-#include <pcl/features/normal_3d_omp.h>
+
+// pcl segmentation
+#include <pcl/ModelCoefficients.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/filters/extract_indices.h>
 
 // pcl vis
 #include <pcl/visualization/pcl_visualizer.h>
@@ -122,12 +127,14 @@ public:
       max_sqrt_neighbor_dist = 0.1;
       sqrt_convergence_diff_thres = 1e-6;
       normals_radius = 0.07;
+      detect_ground_plane = true;
     }
 
     unsigned int max_iterations;
     double max_sqrt_neighbor_dist;
     double sqrt_convergence_diff_thres;
     double normals_radius;
+    bool detect_ground_plane;
     Calibration init_calibration;
   };
 
@@ -168,14 +175,18 @@ private:
 
   std::map<unsigned int, unsigned int> findNeighbors(const pcl::PointCloud<pcl::PointXYZ> &cloud1,
                                                      const pcl::PointCloud<pcl::PointXYZ> &cloud2) const;
+
   Calibration optimizeCalibration(const std::vector<LaserPoint<double> >& scan1,
                                    const std::vector<LaserPoint<double> >& scan2,
                                    const Calibration& current_calibration,
                                    const std::vector<WeightedNormal> & normals,
                                    const std::map<unsigned int, unsigned int> neighbor_mapping) const;
 
+  double detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> &cloud1, const pcl::PointCloud<pcl::PointXYZ> &cloud2) const;
+
   bool checkConvergence(const Calibration& prev_calibration, const Calibration& current_calibration) const;
   bool maxIterationsReached(unsigned int current_iterations) const;
+
 
   CalibrationOptions options_;
 
@@ -184,6 +195,7 @@ private:
   ros::Publisher cloud2_pub_;
   ros::Publisher neighbor_pub_;
   ros::Publisher planarity_pub_;
+  ros::Publisher ground_plane_pub_;
 
   sensor_msgs::PointCloud2 cloud1_msg_;
   sensor_msgs::PointCloud2 cloud2_msg_;

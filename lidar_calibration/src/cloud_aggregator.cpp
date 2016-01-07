@@ -164,7 +164,7 @@ namespace hector_calibration {
       }
       prior_roll_angle_ = roll;
     }else{
-      ROS_ERROR_THROTTLE(5.0, "Cannot transform from sensor %s to target %s . This message is throttled.",
+      ROS_WARN_THROTTLE(5.0, "Cannot transform from sensor %s to target %s. This message is throttled.",
                          cloud_in->header.frame_id.c_str(),
                          p_target_frame_.c_str());
     }
