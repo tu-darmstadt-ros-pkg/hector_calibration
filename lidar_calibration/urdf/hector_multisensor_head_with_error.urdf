@@ -57,8 +57,8 @@
     </visual>
   </link>
   <joint name="head_lidar_spinning_joint" type="continuous">
-    <origin rpy="0 0 0" xyz="0.061 0.0 0.134"/>
-    <origin rpy="1.5707963268 0.0 1.5707963268" xyz="0.0 0.0 0"/>
+    <origin rpy="0 0 0" xyz="0.061 0 0.134"/>
+   <!-- <origin rpy="1.5707963268 0.0 1.5707963268" xyz="0.0 0.0 0"/> -->
     <parent link="head_link"/>
     <child link="head_lidar_mount_link"/>
     <axis rpy="0 0 0" xyz="1 0 0"/>
@@ -72,7 +72,7 @@
   </link>
   <joint name="head_link_hokuyo_laser_joint" type="fixed">
     <!-- CHANGE BELOW FOR LIDAR MODEL ERROR -->
-    <origin rpy="0.1 0 0" xyz="0 0.05 0"/>
+    <origin rpy="0 0 0" xyz="0 0.05 0.05"/>
     <!-- CHANGE ABOVE FOR LIDAR MODEL ERROR -->
     <parent link="head_lidar_mount_link"/>
     <child link="head_link_hokuyo_laser_frame"/>

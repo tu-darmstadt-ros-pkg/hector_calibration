@@ -5,6 +5,8 @@ namespace hector_calibration {
     prior_roll_angle_ = 0.0;
     captured_clouds_ = 0;
 
+    laser_frame_ = "";
+
     scan_sub_ = nh_.subscribe("cloud", 10, &CalibrationCloudAggregator::cloudCallback, this);
     reset_sub_ = nh_.subscribe("reset_clouds", 10, &CalibrationCloudAggregator::resetCallback, this);
     point_cloud1_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("half_scan_1",10,false);
@@ -102,6 +104,7 @@ namespace hector_calibration {
       }
     }
     pcl::toROSMsg(tmp_scan_cloud, scan);
+    scan.header.frame_id = laser_frame_;
     angles.data = angle_agg;
   }
 
@@ -136,6 +139,7 @@ namespace hector_calibration {
   }
 
   void CalibrationCloudAggregator::cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_in) {
+    laser_frame_ = cloud_in->header.frame_id;
     if (captured_clouds_ > rotations_*2) {
       // don't need more than rotations*2 half scans (dump first)
       return;

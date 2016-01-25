@@ -104,6 +104,8 @@ protected:
   sensor_msgs::PointCloud2 half_scan2_;
   std::vector<double> angles2_;
 
+  std::string laser_frame_;
+
   sensor_msgs::PointCloud2 cloud1_;
   sensor_msgs::PointCloud2 cloud2_;
 

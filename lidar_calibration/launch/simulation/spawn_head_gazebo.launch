@@ -12,14 +12,7 @@
   <node name="spawn_robot" pkg="gazebo_ros" type="spawn_model"
     args="-param robot_description_gazebo
           -urdf
-          -model robot_description_gazebo
-
-          -x 0
-          -y 0
-          -z 0
-          -R 0
-          -P 0
-          -Y 0"
+          -model robot_description_gazebo"
     respawn="false" output="screen" />
 
   <!-- start robot state publisher -->
