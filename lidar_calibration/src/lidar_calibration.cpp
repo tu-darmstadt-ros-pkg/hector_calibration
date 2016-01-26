@@ -2,6 +2,8 @@
 
 namespace hector_calibration {
 
+namespace lidar_calibration {
+
 template<typename T>
 bool isValidPoint(const T& point) {
   for (unsigned int i = 0; i < 3; i++) {
@@ -167,7 +169,7 @@ LidarCalibration::LidarCalibration(const ros::NodeHandle& nh) :
   neighbor_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("neighbor_mapping", 1000);
   planarity_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("planarity", 1000);
 
-  request_scans_client_ = nh_.serviceClient<lidar_calibration::RequestScans>("request_scans");
+  request_scans_client_ = nh_.serviceClient<hector_calibration_msgs::RequestScans>("request_scans");
   reset_clouds_client_ = nh_.serviceClient<std_srvs::Empty>("reset_clouds");
 
   ros::NodeHandle pnh("~");
@@ -244,8 +246,8 @@ LidarCalibration::msgToLaserPoints(const sensor_msgs::PointCloud2& scan,
 
 void LidarCalibration::requestScans(std::vector<LaserPoint<double> >& scan1,
                   std::vector<LaserPoint<double> >& scan2) {
-  lidar_calibration::RequestScansRequest request;
-  lidar_calibration::RequestScansResponse response;
+  hector_calibration_msgs::RequestScansRequest request;
+  hector_calibration_msgs::RequestScansResponse response;
   request_scans_client_.waitForExistence();
   request_scans_client_.call(request, response);
   scan1 = msgToLaserPoints(response.scan_1, response.angles1);
@@ -514,7 +516,7 @@ LidarCalibration::findNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
   return mapping;
 }
 
-LidarCalibration::Calibration
+Calibration
 LidarCalibration::optimizeCalibration(const std::vector<LaserPoint<double> >& scan1,
                                       const std::vector<LaserPoint<double> >& scan2,
                                       const Calibration& current_calibration,
@@ -613,8 +615,8 @@ double LidarCalibration::detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> 
 }
 
 
-bool LidarCalibration::checkConvergence(const LidarCalibration::Calibration& prev_calibration,
-                                         const LidarCalibration::Calibration& current_calibration) const {
+bool LidarCalibration::checkConvergence(const Calibration& prev_calibration,
+                                         const Calibration& current_calibration) const {
 //  ROS_INFO_STREAM("Checking convergence.");
   double cum_sqrt_diff = 0;
   for (unsigned int i = 0; i < Calibration::NUM_FREE_PARAMS; i++) {
@@ -655,4 +657,5 @@ bool LidarCalibration::saveToDisk(std::string path, const Calibration& calibrati
   return true;
 }
 
+}
 }

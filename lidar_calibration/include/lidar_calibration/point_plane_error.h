@@ -34,6 +34,8 @@
 
 namespace hector_calibration {
 
+namespace lidar_calibration {
+
 template<typename T>
 using Vector3T = Eigen::Matrix<T, 3, 1>;
 
@@ -118,6 +120,7 @@ struct PointPlaneError {
   WeightedNormal normal_;
 };
 
+}
 }
 
 #endif

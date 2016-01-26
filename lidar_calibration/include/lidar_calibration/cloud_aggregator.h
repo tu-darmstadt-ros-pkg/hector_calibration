@@ -34,7 +34,7 @@
 #include <std_msgs/Empty.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <std_srvs/Empty.h>
-#include <lidar_calibration/RequestScans.h>
+#include <hector_calibration_msgs/RequestScans.h>
 
 // tf
 #include <tf/transform_listener.h>
@@ -48,6 +48,8 @@
 #include <pcl_ros/transforms.h>
 
 namespace hector_calibration {
+
+namespace lidar_calibration {
 
 typedef std::pair<boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ>>, double> pc_roll_tuple;
 
@@ -66,8 +68,8 @@ private:
   void timerCallback(const ros::TimerEvent&);
   void cloudCallback (const sensor_msgs::PointCloud2::ConstPtr& cloud_in);
   void resetCallback(const std_msgs::Empty::ConstPtr&);
-  bool requestScansCallback(lidar_calibration::RequestScans::Request& request,
-                              lidar_calibration::RequestScans::Response& response);
+  bool requestScansCallback(hector_calibration_msgs::RequestScans::Request& request,
+                              hector_calibration_msgs::RequestScans::Response& response);
   bool resetSrvCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
   void publishCloud(const ros::Publisher& pub, sensor_msgs::PointCloud2 &cloud_msg);
 
@@ -113,6 +115,6 @@ protected:
 };
 
 }
-
+}
 #endif
 

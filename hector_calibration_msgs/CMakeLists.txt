@@ -1,24 +1,19 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(lidar_calibration)
+project(hector_calibration_msgs)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  pcl_conversions
-  pcl_ros
+  message_generation
   roscpp
   sensor_msgs
-  hector_calibration_msgs
+  std_msgs
 )
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
-
-SET(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-find_package(Ceres REQUIRED)
+
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -57,6 +52,9 @@ find_package(Ceres REQUIRED)
 # )
 
 ## Generate services in the 'srv' folder
+add_service_files(FILES
+   RequestScans.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -66,17 +64,9 @@ find_package(Ceres REQUIRED)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-
-set(HEADERS
-  include/${PROJECT_NAME}/lidar_calibration.h
-  include/${PROJECT_NAME}/point_plane_error.h
-  include/${PROJECT_NAME}/calibration.h
-  include/${PROJECT_NAME}/cloud_aggregator.h
-)
-
-set(SOURCES
-  src/lidar_calibration.cpp
-  src/cloud_aggregator.cpp
+generate_messages(DEPENDENCIES
+  std_msgs
+  sensor_msgs
 )
 
 ################################################
@@ -109,15 +99,10 @@ set(SOURCES
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES lidar_calibration
-  CATKIN_DEPENDS
-   pcl_conversions
-   pcl_ros 
-   roscpp 
-   sensor_msgs
-   hector_calibration_msgs
-  DEPENDS system_lib
+#  INCLUDE_DIRS include
+#  LIBRARIES hector_calibration_msgs
+  CATKIN_DEPENDS message_runtime roscpp sensor_msgs std_msgs
+#  DEPENDS system_lib
 )
 
 ###########
@@ -128,45 +113,30 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-  include
   ${catkin_INCLUDE_DIRS}
-  ${CERES_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
- add_library(lidar_calibration
-   ${HEADERS} ${SOURCES}
- )
+# add_library(hector_calibration_msgs
+#   src/${PROJECT_NAME}/hector_calibration_msgs.cpp
+# )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_dependencies(lidar_calibration
-  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-  ${catkin_EXPORTED_TARGETS}
-)
+# add_dependencies(hector_calibration_msgs ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(lidar_calibration_node src/lidar_calibration_node.cpp)
-add_dependencies(lidar_calibration_node ${catkin_EXPORTED_TARGETS})
-add_executable(cloud_aggregator_node src/cloud_aggregator_node.cpp)
-add_dependencies(cloud_aggregator_node ${catkin_EXPORTED_TARGETS})
+# add_executable(hector_calibration_msgs_node src/hector_calibration_msgs_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(lidar_calibration_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(hector_calibration_msgs_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME}
-  ${catkin_LIBRARIES}
-  ${CERES_LIBRARIES}
-)
-target_link_libraries(lidar_calibration_node
-  ${PROJECT_NAME}
-)
-target_link_libraries(cloud_aggregator_node
-  ${PROJECT_NAME}
-)
+# target_link_libraries(hector_calibration_msgs_node
+#   ${catkin_LIBRARIES}
+# )
 
 #############
 ## Install ##
@@ -183,7 +153,7 @@ target_link_libraries(cloud_aggregator_node
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS lidar_calibration lidar_calibration_node
+# install(TARGETS hector_calibration_msgs hector_calibration_msgs_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -208,7 +178,7 @@ target_link_libraries(cloud_aggregator_node
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_lidar_calibration.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_hector_calibration_msgs.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

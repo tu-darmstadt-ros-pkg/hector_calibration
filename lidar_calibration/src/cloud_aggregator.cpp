@@ -1,6 +1,8 @@
 #include <lidar_calibration/cloud_aggregator.h>
 
 namespace hector_calibration {
+
+namespace lidar_calibration {
   CalibrationCloudAggregator::CalibrationCloudAggregator() {
     prior_roll_angle_ = 0.0;
     captured_clouds_ = 0;
@@ -110,8 +112,8 @@ namespace hector_calibration {
 
 
   bool CalibrationCloudAggregator::requestScansCallback(
-      lidar_calibration::RequestScans::Request& request,
-      lidar_calibration::RequestScans::Response& response) {
+      hector_calibration_msgs::RequestScans::Request& request,
+      hector_calibration_msgs::RequestScans::Response& response) {
     scanToMsg(cloud_agg1_, response.scan_1, response.angles1);
     scanToMsg(cloud_agg2_, response.scan_2, response.angles2);
     return true;
@@ -173,4 +175,5 @@ namespace hector_calibration {
                          p_target_frame_.c_str());
     }
   }
+}
 }
