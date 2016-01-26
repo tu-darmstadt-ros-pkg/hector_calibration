@@ -1,9 +1,16 @@
+# lidar_calibration
+
+## Installation
+
 Install following dependencies for ceres:
 
 ```
-sudo apt-get install cmake
-sudo apt-get install libgoogle-glog-dev
-sudo apt-get install libatlas-base-dev
-sudo apt-get install libeigen3-dev
-sudo apt-get install libsuitesparse-dev
+sudo apt-get install libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev
+
 ```
+
+## Usage
+
+### Creating a launch file
+
+#### Interpreting the results
