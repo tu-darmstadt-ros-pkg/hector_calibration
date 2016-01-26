@@ -45,6 +45,14 @@ sudo apt-get install libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuite
 
 #### lidar_calibration_node
 
+**Command Line Arguments**
+
+| Argument | Description
+|:-----|:-----|
+| --help | Show all available command line arguments. |
+| --m | Manual mode: Next iteration will start after pressing [Enter]. |
+| --n | Visualization of normals with pcl_viewer. |
+
 **Parameters**
 
 | Parameter | Type | Default | Description |
