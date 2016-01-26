@@ -35,7 +35,7 @@
      <param name="tf_wait_duration" value="10"/>
      
     <param name="save_calibration" value="true"/>
-    <param name="save_path" value="$(find lidar_calibration)/calibrations/argonauts_test.urdf.xacro"/>
+    <param name="save_path" value="$(find argo_robot_description)/calibrations/${arg sensor_identifier)_lidar_calibration.urdf.xacro"/>
     
     <remap from="request_scans" to="$(arg sensor_identifier)_lidar/request_scans" />
     <remap from="reset_clouds" to="$(arg sensor_identifier)_lidar/reset_clouds" />
