@@ -13,28 +13,28 @@ sudo apt-get install libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuite
 
 #### cloud_aggregator_node
 
-**Parameter**
+**Parameters**
 
 | Parameter | Type | Default | Description |
 |:-----|:-----|:-----|:-----|
-| target_frame | String | "base_link" |Fixed frame for point clouds (Actuator frame) |
-| rotations | Integer | 1 |Number of rotations that are accumulated |
-| tf_wait_duration | Double | 0.5 | Time to wait for transforms |
+| target_frame | String | "base_link" |Fixed frame for point clouds (actuator frame). |
+| rotations | Integer | 1 |Number of rotations to accumulate. |
+| tf_wait_duration | Double | 0.5 | Time to wait for transforms. |
 
 
 **Subscribtions**
 
 | Topic Name | Type | Description |
 |:-----|:-----|:-----|
-| cloud | sensor_msgs::PointCloud2 | Laser sensor input |
-| reset_clouds | std_msgs::Empty | Resets the saved point clouds |
+| cloud | sensor_msgs::PointCloud2 | Input for laser scan data. |
+| reset_clouds | std_msgs::Empty | Resets the saved point clouds. |
 
 **Publications**
 
 | Topic Name | Type | Description |
 |:-----|:-----|:-----|
-| half_scan_1 | sensor_msgs::PointCloud2 | First point cloud |
-| half_scan_2 | sensor_msgs::PointCloud2 | Second point cloud |
+| half_scan_1 | sensor_msgs::PointCloud2 | First accumulated point cloud. |
+| half_scan_2 | sensor_msgs::PointCloud2 | Second accumulated point cloud. |
 
 **Service Servers**
 
@@ -45,7 +45,7 @@ sudo apt-get install libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuite
 
 #### lidar_calibration_node
 
-**Parameter**
+**Parameters**
 
 | Parameter | Type | Default | Description |
 |:-----|:-----|:-----|:-----|
