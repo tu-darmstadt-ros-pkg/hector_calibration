@@ -28,6 +28,19 @@ struct Calibration {
     yaw = _yaw;
   }
 
+  Calibration(const Eigen::Affine3d& transformation) {
+    Eigen::Vector3d rpy = transformation.linear().eulerAngles(2, 1, 0);
+    Eigen::Vector3d xyz = transformation.translation();
+
+    x = xyz(0);
+    y = xyz(1);
+    z = xyz(2);
+
+    roll = rpy(2);
+    pitch = rpy(1);
+    yaw = rpy(0);
+  }
+
   std::string toString() {
     std::stringstream ss;
     ss << "[x =" << x << ", y=" << y << ", z=" << z << "; roll=" << roll << ", pitch=" << pitch << ", yaw=" << yaw << "]";
@@ -48,17 +61,14 @@ struct Calibration {
     Eigen::Affine3d transform(Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ())
         * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY())
         * Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()));
-    transform.translation() = Eigen::Vector3d(0, y, z);
+    transform.translation() = Eigen::Vector3d(x, y, z);
     return transform;
   }
 
   Calibration applyRotationOffset(const Eigen::Affine3d offset) {
     Eigen::Affine3d calibration = getTransform();
     Eigen::Affine3d rotated = offset * calibration * offset.inverse();
-    Eigen::Vector3d rpy = rotated.linear().eulerAngles(0, 1, 2);
-    Eigen::Vector3d xyz = rotated.translation();
-
-    return Calibration(xyz(0), xyz(1), xyz(2), rpy(0), rpy(1), rpy(2));
+    return Calibration(rotated);
   }
 
   double x;

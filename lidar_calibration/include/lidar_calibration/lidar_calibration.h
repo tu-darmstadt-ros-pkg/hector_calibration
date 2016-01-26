@@ -32,6 +32,8 @@
 #include <lidar_calibration/calibration.h>
 #include <hector_calibration_msgs/RequestScans.h>
 
+#include <boost/date_time.hpp>
+
 // standard
 
 // pcl
@@ -58,6 +60,10 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <std_srvs/Empty.h>
 #include <visualization_msgs/MarkerArray.h>
+
+// tf
+#include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
 
 // ceres solver
 #include <ceres/ceres.h>
@@ -138,6 +144,10 @@ private:
 
   bool saveToDisk(std::string path, const Calibration& calibration) const;
 
+  Eigen::Affine3d getTransform(std::string frame_base, std::string frame_target) const;
+
+  tf::TransformListener tfl_;
+  ros::Duration tf_wait_duration_;
 
   CalibrationOptions options_;
   bool save_calibration_;
@@ -155,6 +165,9 @@ private:
 
   std::string actuator_frame_;
   std::string laser_frame_;
+
+  std::string o_spin_frame_;
+  std::string o_laser_frame_;
 
   Eigen::Affine3d rotation_offset_;
 

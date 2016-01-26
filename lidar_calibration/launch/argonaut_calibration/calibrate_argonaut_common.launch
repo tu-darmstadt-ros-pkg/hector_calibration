@@ -29,6 +29,14 @@
     <param name="actuator_frame" value="$(arg sensor_identifier)_lidar_actuator_frame"/>
     <param name="rotation_offset_pitch" value="-1.57"/>
     <param name="detect_ground_plane" value="false"/>
+    
+    <param name="o_spin_frame" value="rear_spinning_lidar_spin_link"/>
+    <param name="o_laser_frame" value="rear_hokuyo_laser_frame"/>
+     <param name="tf_wait_duration" value="10"/>
+     
+    <param name="save_calibration" value="true"/>
+    <param name="save_path" value="$(find lidar_calibration)/calibrations/argonauts_test.urdf.xacro"/>
+    
     <remap from="request_scans" to="$(arg sensor_identifier)_lidar/request_scans" />
     <remap from="reset_clouds" to="$(arg sensor_identifier)_lidar/reset_clouds" />
   </node>
