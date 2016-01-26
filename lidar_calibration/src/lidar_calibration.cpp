@@ -184,7 +184,7 @@ bool LidarCalibration::loadOptionsFromParamServer() {
   pnh.param<double>("max_sqrt_neighbor_dist", options_.max_sqrt_neighbor_dist, 0.1);
   pnh.param<double>("sqrt_convergence_diff_thres", options_.sqrt_convergence_diff_thres, 1e-6);
   pnh.param<double>("normals_radius", options_.normals_radius, 0.07);
-  pnh.param<bool>("detect_ground_plane", options_.detect_ground_plane, true);
+  pnh.param<bool>("detect_ground_plane", options_.detect_ground_plane, false);
 
   pnh.param<bool>("save_calibration", save_calibration_, false);
   pnh.param<std::string>("save_path", save_path_, "");
