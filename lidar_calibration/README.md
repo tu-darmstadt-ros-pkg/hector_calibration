@@ -51,7 +51,7 @@ sudo apt-get install libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuite
 |:-----|:-----|
 | --help | Show all available command line arguments. |
 | --m | Manual mode: Next iteration will start after pressing [Enter]. |
-| --n | Visualization of normals with pcl_viewer. |
+| --n | Visualization of surface normals after each iteration with pcl_viewer. |
 
 **Parameters**
 
