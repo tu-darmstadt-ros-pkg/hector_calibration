@@ -321,7 +321,11 @@ void LidarCalibration::calibrate() {
           &&  !checkConvergence(previous_calibration, current_calibration));
 
   if (options_.detect_ground_plane || options_.detect_ceiling) {
-    current_calibration.roll = detectGroundPlane(cloud1, cloud2);
+    double ground_roll = detectGroundPlane(cloud1, cloud2);
+
+    Eigen::Affine3d ground_transform(Eigen::AngleAxisd(ground_roll, Eigen::Vector3d::UnitX()));
+    current_calibration = current_calibration.applyTransform(ground_transform);
+
     applyCalibration(scan1, scan2, cloud1, cloud2, current_calibration);
     pcl::toROSMsg(cloud1, cloud1_msg_);
     pcl::toROSMsg(cloud2, cloud2_msg_);
@@ -574,8 +578,8 @@ LidarCalibration::optimizeCalibration(const std::vector<LaserPoint<double> >& sc
   calibration.yaw = rotation[1];
 
   Calibration rotated_calibration = calibration.applyRotationOffset(rotation_offset_);
-//  ROS_INFO_STREAM("Optimization result original: " << calibration.toString());
-  ROS_INFO_STREAM("Optimization result: " << rotated_calibration.toString());
+//  ROS_INFO_STREAM("Optimization original: " << calibration.toString());
+  ROS_INFO_STREAM("Optimization   result: " << rotated_calibration.toString());
   return calibration;
 }
 
@@ -587,8 +591,6 @@ double LidarCalibration::detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> 
   pcl::copyPointCloud(cloud1, *cloud_ptr);
   *cloud_ptr += cloud2;
 
-  // TODO: Get transform at calibration start,
-  // use same transformation for inverse
   // Transform to ground frame
   if (ground_frame_ != "") {
     pcl::transformPointCloud(*cloud_ptr, *cloud_ptr, plane_transform_);

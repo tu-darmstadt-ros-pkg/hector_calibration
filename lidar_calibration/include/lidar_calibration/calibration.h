@@ -65,9 +65,13 @@ struct Calibration {
     return transform;
   }
 
+  Calibration applyTransform(const Eigen::Affine3d& transform) {
+    Eigen::Affine3d rotated = transform * getTransform();
+    return Calibration(rotated);
+  }
+
   Calibration applyRotationOffset(const Eigen::Affine3d offset) {
-    Eigen::Affine3d calibration = getTransform();
-    Eigen::Affine3d rotated = offset * calibration * offset.inverse();
+    Eigen::Affine3d rotated = offset * getTransform() * offset.inverse();
     return Calibration(rotated);
   }
 
