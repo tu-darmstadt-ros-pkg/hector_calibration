@@ -43,7 +43,7 @@ struct Calibration {
 
   std::string toString() {
     std::stringstream ss;
-    ss << "[x =" << x << ", y=" << y << ", z=" << z << "; roll=" << roll << ", pitch=" << pitch << ", yaw=" << yaw << "]";
+    ss << "[x=" << x << ", y=" << y << ", z=" << z << "; roll=" << roll << ", pitch=" << pitch << ", yaw=" << yaw << "]";
     return ss.str();
   }
 

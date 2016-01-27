@@ -2,6 +2,11 @@
 <launch> 
   <node pkg="lidar_calibration" type="lidar_calibration_node" name="lidar_calibration_node" output="screen" args="--m">
     <param name="actuator_frame" value="head_lidar_actuator_frame"/>
+    
+    <param name="detect_ceiling" value="false"/>
+    <param name="detect_ground_plane" value="true"/>
+    <param name="ground_frame_" value="base"/>
+    
     <param name="save_calibration" value="true"/>
     <param name="save_path" value="$(find thor_mang_description)/head_lidar_calibration/calibration_test.urdf.xacro"/>
     <remap from="request_scans" to="head_lidar/request_scans" />

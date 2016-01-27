@@ -195,7 +195,6 @@ bool LidarCalibration::loadOptionsFromParamServer() {
   pnh.param<double>("rotation_offset_roll", roll, 0);
   pnh.param<double>("rotation_offset_pitch", pitch, 0);
   pnh.param<double>("rotation_offset_yaw", yaw, 0);
-  // ROS_INFO_STREAM("Loaded rotation offset: " << rotation_offset[0] << rotation_offset[1] << rotation_offset[2]);
   rotation_offset_ = Eigen::Affine3d(Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ())
         * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY())
         * Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()));
@@ -218,10 +217,8 @@ void LidarCalibration::setManualMode(bool manual) {
 
 void LidarCalibration::setPeriodicPublishing(bool status, double period) {
   if (status) {
-//    ROS_INFO_STREAM("[LidarCalibration] Enabled periodic cloud publishing.");
     timer_ = nh_.createTimer(ros::Duration(period), &LidarCalibration::timerCallback, this, false);
   } else {
-//    ROS_INFO_STREAM("[LidarCalibration] Disabled periodic cloud publishing.");
     timer_.stop();
   }
 }
@@ -278,6 +275,14 @@ void LidarCalibration::calibrate() {
   requestScans(scan1, scan2);
   ROS_INFO_STREAM("Received point clouds of sizes " << scan1.size() << " and " << scan2.size() << ".");
 
+  // get transforms
+  if (o_laser_frame_ != "" && o_spin_frame_ != "") {
+    laser_transform_ = getTransform(o_spin_frame_, o_laser_frame_);
+  }
+  if (ground_frame_ != "") {
+    plane_transform_ = getTransform(ground_frame_, actuator_frame_);
+  }
+
   scan1 = cropCloud(scan1, 1);
   scan2 = cropCloud(scan2, 1);
 
@@ -292,6 +297,8 @@ void LidarCalibration::calibrate() {
     ROS_INFO_STREAM("-------------- Starting iteration " << (iteration_counter+1) << "--------------");
     // Transform laser points to actuator frame using current calibration
     applyCalibration(scan1, scan2, cloud1, cloud2, current_calibration);
+
+    // Publish current results
     pcl::toROSMsg(cloud1, cloud1_msg_);
     pcl::toROSMsg(cloud2, cloud2_msg_);
     publishCloud(cloud1_msg_, cloud1_pub_);
@@ -302,7 +309,6 @@ void LidarCalibration::calibrate() {
 
     // Find neighbors
     std::map<unsigned int, unsigned int> neighbor_mapping = findNeighbors(cloud1, cloud2);
-    publishNeighbors(cloud1, cloud2, neighbor_mapping);
 
     previous_calibration = current_calibration;
     current_calibration = optimizeCalibration(scan1, scan2, current_calibration, normals, neighbor_mapping);
@@ -312,7 +318,7 @@ void LidarCalibration::calibrate() {
       std::cin.get();
     }
   } while(ros::ok() && !maxIterationsReached(iteration_counter)
-          && (iteration_counter < 2 || !checkConvergence(previous_calibration, current_calibration)));
+          &&  !checkConvergence(previous_calibration, current_calibration));
 
   if (options_.detect_ground_plane || options_.detect_ceiling) {
     current_calibration.roll = detectGroundPlane(cloud1, cloud2);
@@ -522,6 +528,7 @@ LidarCalibration::findNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
     }
   }
   ROS_INFO_STREAM("Found " << mapping.size() << " neighbor matches.");
+  publishNeighbors(cloud1, cloud2, mapping);
   return mapping;
 }
 
@@ -567,6 +574,7 @@ LidarCalibration::optimizeCalibration(const std::vector<LaserPoint<double> >& sc
   calibration.yaw = rotation[1];
 
   Calibration rotated_calibration = calibration.applyRotationOffset(rotation_offset_);
+//  ROS_INFO_STREAM("Optimization result original: " << calibration.toString());
   ROS_INFO_STREAM("Optimization result: " << rotated_calibration.toString());
   return calibration;
 }
@@ -583,8 +591,7 @@ double LidarCalibration::detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> 
   // use same transformation for inverse
   // Transform to ground frame
   if (ground_frame_ != "") {
-    Eigen::Affine3d transform = getTransform(ground_frame_, actuator_frame_);
-    pcl::transformPointCloud(*cloud_ptr, *cloud_ptr, transform);
+    pcl::transformPointCloud(*cloud_ptr, *cloud_ptr, plane_transform_);
   }
 
   // Cut off top or bottom part
@@ -601,8 +608,7 @@ double LidarCalibration::detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> 
 
   // Transform back
   if (ground_frame_ != "") {
-    Eigen::Affine3d transform = getTransform(actuator_frame_, ground_frame_);
-    pcl::transformPointCloud(*cloud_part, *cloud_part, transform);
+    pcl::transformPointCloud(*cloud_part, *cloud_part, plane_transform_.inverse());
   }
 
   // init segmentation
@@ -642,7 +648,7 @@ double LidarCalibration::detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> 
   // Calculate angle from ground plane to actuator frame around x-axis
   double ny = coefficients.values[1]; double nz = coefficients.values[2];
 
-  double roll = std::acos(nz/std::sqrt(std::pow(ny, 2) + std::pow(nz, 2)));
+  double roll = M_PI/2 - std::acos(ny/std::sqrt(std::pow(ny, 2) + std::pow(nz, 2)));
   // double pitch = M_PI/2 - std::acos(nx/std::sqrt(std::pow(nx, 2) + std::pow(nz, 2))); // not needed
 
   if (options_.detect_ground_plane) {
@@ -687,13 +693,7 @@ bool LidarCalibration::saveToDisk(std::string path, const Calibration& calibrati
 
   if (o_laser_frame_ != "" && o_spin_frame_ != "") {
     ROS_INFO_STREAM("Transforming calibration to frame " << o_spin_frame_);
-    Eigen::Affine3d V = getTransform(o_spin_frame_, o_laser_frame_);
-//    ROS_INFO_STREAM("V transformation: Rotation:" << std::endl << V.linear() << std::endl << "Translation:" << std::endl << V.translation());
-    Eigen::Affine3d H = calibration.getTransform();
-//    ROS_INFO_STREAM("H transformation: Rotation:" << std::endl << H.linear() << std::endl << "Translation:" << std::endl << H.translation());
-    Eigen::Affine3d HV = H*V;
-//    ROS_INFO_STREAM("HV transformation: Rotation:" << std::endl << HV.linear() << std::endl << "Translation:" << std::endl << HV.translation());
-
+    Eigen::Affine3d HV = calibration.getTransform()*laser_transform_;
     C = Calibration(HV);
   }
 

@@ -169,9 +169,11 @@ private:
   std::string actuator_frame_;
   std::string laser_frame_;
   std::string ground_frame_;
+  Eigen::Affine3d plane_transform_;
 
   std::string o_spin_frame_;
   std::string o_laser_frame_;
+  Eigen::Affine3d laser_transform_;
 
   Eigen::Affine3d rotation_offset_;
 
