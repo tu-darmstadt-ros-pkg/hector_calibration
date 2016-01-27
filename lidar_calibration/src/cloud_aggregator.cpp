@@ -158,7 +158,7 @@ namespace lidar_calibration {
         // mark cloud as complete
         captured_clouds_++;
         savePointCloud(cloud_in, transform);
-        ROS_INFO_STREAM("[CloudAggregator] Captured half scan number: " << captured_clouds_);
+        ROS_INFO_STREAM("[CloudAggregator] Captured half scan number: " << captured_clouds_ << "/" << (rotations_*2+1));
         if (captured_clouds_ == rotations_*2 + 1) {
           request_scans_srv_ = nh_.advertiseService("request_scans", &CalibrationCloudAggregator::requestScansCallback, this);
           transformCloud(cloud_agg1_, cloud1_);

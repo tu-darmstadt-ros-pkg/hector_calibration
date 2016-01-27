@@ -351,7 +351,6 @@ void LidarCalibration::applyCalibration(const std::vector<LaserPoint<double> > &
                                         pcl::PointCloud<pcl::PointXYZ>& cloud2,
                                         const Calibration& calibration)
 {
-//  ROS_INFO_STREAM("Applying new calibration.");s
   cloud1 = laserToActuatorCloud(scan1, calibration);
   cloud2 = laserToActuatorCloud(scan2, calibration);
 }
@@ -366,17 +365,17 @@ void fixNanInf(WeightedNormal& normal) {
 
 std::vector<WeightedNormal>
 LidarCalibration::computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) const{
-//  ROS_INFO_STREAM("Computing normals.");
   pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::copyPointCloud(cloud, *cloud_ptr);
   kdtree.setInputCloud(cloud_ptr);
 
-  std::vector<WeightedNormal> normals;
+  std::vector<WeightedNormal> normals(cloud.size());
   pcl::PointCloud<pcl::Normal> pcl_normals;
-//#ifdef _OPENMP
-//#pragma omp parallel for shared (normals, pcl_normals, kdtree)
-//#endif
+  pcl_normals.resize(cloud.size());
+#ifdef _OPENMP
+#pragma omp parallel for shared (normals, pcl_normals, kdtree, cloud)
+#endif
   for (unsigned int i = 0; i < cloud.size(); i++) {
     pcl::PointXYZ p = cloud[i];
 
@@ -406,12 +405,12 @@ LidarCalibration::computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) co
     normal.normal = Eigen::Vector3d(plane_parameters[0], plane_parameters[1], plane_parameters[2]);
     if (vis_normals_) {
       pcl::Normal pcl_normal(plane_parameters[0], plane_parameters[1], plane_parameters[2]);
-      pcl_normals.push_back(pcl_normal);
+      pcl_normals[i] = pcl_normal;
     }
 
     normal.weight = weight;
     fixNanInf(normal);
-    normals.push_back(normal);
+    normals[i] = normal;
   }
 
   if (vis_normals_) {
