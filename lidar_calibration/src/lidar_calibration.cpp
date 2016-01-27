@@ -375,7 +375,7 @@ LidarCalibration::computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) co
   std::vector<WeightedNormal> normals;
   pcl::PointCloud<pcl::Normal> pcl_normals;
 //#ifdef _OPENMP
-//#pragma omp parallel for shared (normals)
+//#pragma omp parallel for shared (normals, pcl_normals, kdtree)
 //#endif
   for (unsigned int i = 0; i < cloud.size(); i++) {
     pcl::PointXYZ p = cloud[i];
