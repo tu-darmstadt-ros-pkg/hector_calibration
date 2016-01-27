@@ -44,6 +44,7 @@
 #include <pcl/filters/filter.h>
 #include <pcl/filters/crop_box.h>
 #include <pcl/features/normal_3d.h>
+#include <pcl/filters/passthrough.h>
 
 // pcl segmentation
 #include <pcl/ModelCoefficients.h>
@@ -82,7 +83,8 @@ public:
       max_sqrt_neighbor_dist = 0.1;
       sqrt_convergence_diff_thres = 1e-6;
       normals_radius = 0.07;
-      detect_ground_plane = true;
+      detect_ground_plane = false;
+      detect_ceiling = false;
     }
 
     unsigned int max_iterations;
@@ -90,6 +92,7 @@ public:
     double sqrt_convergence_diff_thres;
     double normals_radius;
     bool detect_ground_plane;
+    bool detect_ceiling;
     Calibration init_calibration;
   };
 
@@ -165,6 +168,7 @@ private:
 
   std::string actuator_frame_;
   std::string laser_frame_;
+  std::string ground_frame_;
 
   std::string o_spin_frame_;
   std::string o_laser_frame_;

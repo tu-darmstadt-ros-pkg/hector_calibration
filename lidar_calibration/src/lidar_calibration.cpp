@@ -185,6 +185,8 @@ bool LidarCalibration::loadOptionsFromParamServer() {
   pnh.param<double>("sqrt_convergence_diff_thres", options_.sqrt_convergence_diff_thres, 1e-6);
   pnh.param<double>("normals_radius", options_.normals_radius, 0.07);
   pnh.param<bool>("detect_ground_plane", options_.detect_ground_plane, false);
+  pnh.param<bool>("detect_ceiling", options_.detect_ceiling, false);
+  pnh.param<std::string>("ground_frame", ground_frame_, "");
 
   pnh.param<bool>("save_calibration", save_calibration_, false);
   pnh.param<std::string>("save_path", save_path_, "");
@@ -312,7 +314,7 @@ void LidarCalibration::calibrate() {
   } while(ros::ok() && !maxIterationsReached(iteration_counter)
           && (iteration_counter < 2 || !checkConvergence(previous_calibration, current_calibration)));
 
-  if (options_.detect_ground_plane) {
+  if (options_.detect_ground_plane || options_.detect_ceiling) {
     current_calibration.roll = detectGroundPlane(cloud1, cloud2);
     applyCalibration(scan1, scan2, cloud1, cloud2, current_calibration);
     pcl::toROSMsg(cloud1, cloud1_msg_);
@@ -372,6 +374,9 @@ LidarCalibration::computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) co
 
   std::vector<WeightedNormal> normals;
   pcl::PointCloud<pcl::Normal> pcl_normals;
+//#ifdef _OPENMP
+//#pragma omp parallel for shared (normals)
+//#endif
   for (unsigned int i = 0; i < cloud.size(); i++) {
     pcl::PointXYZ p = cloud[i];
 
@@ -500,7 +505,6 @@ void LidarCalibration::visualizeNormals(const pcl::PointCloud<pcl::PointXYZ>& cl
 std::map<unsigned int, unsigned int>
 LidarCalibration::findNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
                                 const pcl::PointCloud<pcl::PointXYZ>& cloud2) const {
-//  ROS_INFO_STREAM("Computing neighbor mapping.");
   pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2_ptr(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::copyPointCloud(cloud2, *cloud2_ptr);
@@ -529,7 +533,6 @@ LidarCalibration::optimizeCalibration(const std::vector<LaserPoint<double> >& sc
                                       const std::vector<WeightedNormal> &normals,
                                       const std::map<unsigned int, unsigned int> neighbor_mapping) const
 {
-//  ROS_INFO_STREAM("Solving Non-Linear Least Squares.");
   if (scan1.size() != normals.size()) {
     ROS_ERROR_STREAM("Size of scan1 (" << scan1.size() << ") doesn't match size of normals (" << normals.size() << ").");
     return Calibration();
@@ -572,11 +575,36 @@ LidarCalibration::optimizeCalibration(const std::vector<LaserPoint<double> >& sc
 double LidarCalibration::detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> &cloud1,
                                            const pcl::PointCloud<pcl::PointXYZ> &cloud2) const
 {
-  ROS_INFO_STREAM("Detecting ground plane.");
   // merge point clouds
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::copyPointCloud(cloud1, *cloud_ptr);
   *cloud_ptr += cloud2;
+
+  // TODO: Get transform at calibration start,
+  // use same transformation for inverse
+  // Transform to ground frame
+  if (ground_frame_ != "") {
+    Eigen::Affine3d transform = getTransform(ground_frame_, actuator_frame_);
+    pcl::transformPointCloud(*cloud_ptr, *cloud_ptr, transform);
+  }
+
+  // Cut off top or bottom part
+  pcl::PassThrough<pcl::PointXYZ> pass;
+  pass.setInputCloud(cloud_ptr);
+  pass.setFilterFieldName ("z");
+  if (options_.detect_ground_plane) {
+    pass.setFilterLimits(-std::numeric_limits<float>::max() , 0);
+  } else if (options_.detect_ceiling) {
+    pass.setFilterLimits(0.0, std::numeric_limits<float>::max());
+  }
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_part(new pcl::PointCloud<pcl::PointXYZ>());
+  pass.filter(*cloud_part);
+
+  // Transform back
+  if (ground_frame_ != "") {
+    Eigen::Affine3d transform = getTransform(actuator_frame_, ground_frame_);
+    pcl::transformPointCloud(*cloud_part, *cloud_part, transform);
+  }
 
   // init segmentation
   pcl::ModelCoefficients coefficients;
@@ -593,19 +621,20 @@ double LidarCalibration::detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> 
   seg.setDistanceThreshold(0.05);
   seg.setMaxIterations(1000);
 
-  seg.setInputCloud(cloud_ptr);
+  seg.setInputCloud(cloud_part);
   seg.segment(*inliers, coefficients);
 
-  // Extract ground plane inliers
+  // Extract plane inliers
   pcl::ExtractIndices<pcl::PointXYZ> extract;
-  extract.setInputCloud(cloud_ptr);
+  extract.setInputCloud(cloud_part);
   extract.setIndices(inliers);
 
-  pcl::PointCloud<pcl::PointXYZ> ground_plane;
-  extract.filter(ground_plane);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr ground_plane(new pcl::PointCloud<pcl::PointXYZ>());
+  extract.filter(*ground_plane);
 
+  // Publish plane
   sensor_msgs::PointCloud2 ground_plane_msg;
-  pcl::toROSMsg(ground_plane, ground_plane_msg);
+  pcl::toROSMsg(*ground_plane, ground_plane_msg);
   ground_plane_msg.header.frame_id = actuator_frame_;
   ground_plane_msg.header.stamp = ros::Time::now();
 
@@ -615,7 +644,14 @@ double LidarCalibration::detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> 
   double ny = coefficients.values[1]; double nz = coefficients.values[2];
 
   double roll = std::acos(nz/std::sqrt(std::pow(ny, 2) + std::pow(nz, 2)));
-  // double pitch = M_PI/2 - std::acos(nx/std::sqrt(std::pow(nx, 2) + std::pow(nz, 2))); // not neededs
+  // double pitch = M_PI/2 - std::acos(nx/std::sqrt(std::pow(nx, 2) + std::pow(nz, 2))); // not needed
+
+  if (options_.detect_ground_plane) {
+    ROS_INFO_STREAM("Detecting ground plane. Roll Angle: " << roll);
+  } else if (options_.detect_ceiling) {
+    ROS_INFO_STREAM("Detecting ceiling. Roll Angle: " << roll);
+  }
+
 
   return roll;
 }
