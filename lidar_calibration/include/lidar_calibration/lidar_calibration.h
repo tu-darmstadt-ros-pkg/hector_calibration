@@ -192,9 +192,5 @@ private:
 
 /*** TODO ***/
 /*
- * 3. add offset for lidar orientation
- * 4. save calibration to XML with timestamp
- * 5. calibration at predefined place, write script to copy new calibration
- * 6. parallelize normal estimation (OpenMP)
- *   --https://github.com/PointCloudLibrary/pcl/blob/a654fe4188382416c99322cafbd9319c59a7355c/features/include/pcl/features/impl/normal_3d_omp.hpp
+   1. write script to copy new calibration?
 */

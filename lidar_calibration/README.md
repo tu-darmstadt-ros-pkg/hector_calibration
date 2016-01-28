@@ -2,10 +2,10 @@
 
 ## Installation
 
-Install following dependencies for ceres:
+Install following dependency for ceres:
 
 ```
-sudo apt-get install libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev
+sudo apt-get install libceres-dev
 ```
 
 ## Usage

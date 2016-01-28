@@ -72,14 +72,14 @@
   </link>
   <joint name="head_link_hokuyo_laser_joint" type="fixed">
     <!-- CHANGE BELOW FOR LIDAR MODEL ERROR -->
-    <origin rpy="0.2 0.2 0.2" xyz="0.0 0.05 0.05"/>
+    <origin rpy="0.1 0.1 0.1" xyz="0.0 0.05 0.05"/>
     <!-- CHANGE ABOVE FOR LIDAR MODEL ERROR -->
     <parent link="head_lidar_mount_link"/>
     <child link="head_link_hokuyo_laser_frame"/>
   </joint>
   <link name="head_link_hokuyo_laser_frame">
     <inertial>
-      <mass value="0.270"/>
+      <mass value="0.070"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <inertia ixx="2.632e-4" ixy="0" ixz="0" iyy="2.632e-4" iyz="0" izz="1.62e-4"/>
     </inertial>

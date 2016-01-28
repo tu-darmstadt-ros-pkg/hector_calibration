@@ -119,13 +119,15 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES lidar_calibration
   CATKIN_DEPENDS
-   pcl_conversions
-   pcl_ros 
-   roscpp 
-   sensor_msgs
-   hector_calibration_msgs
-   tf_conversions
-  DEPENDS system_lib
+    pcl_conversions
+    pcl_ros 
+    roscpp 
+    sensor_msgs
+    hector_calibration_msgs
+    tf_conversions
+  DEPENDS 
+    system_lib
+    Ceres
 )
 
 ###########
