@@ -1,5 +1,5 @@
 //=================================================================================================
-// Copyright (c) 2012, Martin Oehler, TU Darmstadt
+// Copyright (c) 2016, Martin Oehler, TU Darmstadt
 // All rights reserved.
 
 // Redistribution and use in source and binary forms, with or without
