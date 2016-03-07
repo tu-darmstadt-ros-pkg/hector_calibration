@@ -33,8 +33,8 @@
     <param name="detect_ceiling" value="true"/>
     <param name="ground_frame" value="base_link"/>
     
-    <param name="o_spin_frame" value="rear_spinning_lidar_spin_link"/>
-    <param name="o_laser_frame" value="rear_hokuyo_laser_frame"/>
+    <param name="o_spin_frame" value="$(arg sensor_identifier)_spinning_lidar_spin_link"/>
+    <param name="o_laser_frame" value="$(arg sensor_identifier)_hokuyo_laser_frame"/>
     <param name="tf_wait_duration" value="10"/>
      
     <param name="save_calibration" value="true"/>
