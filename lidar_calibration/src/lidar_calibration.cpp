@@ -330,8 +330,8 @@ void LidarCalibration::calibrate() {
     Eigen::Affine3d ground__roll_transform(Eigen::AngleAxisd(ground_roll, Eigen::Vector3d::UnitX()));
     current_calibration = current_calibration.applyTransform(ground__roll_transform);
 
-    Eigen::Affine3d ground_pitch_transform(Eigen::AngleAxisd(ground_pitch, Eigen::Vector3d::UnitZ()));
-    current_calibration = current_calibration.applyTransform(ground_pitch_transform);
+    //Eigen::Affine3d ground_pitch_transform(Eigen::AngleAxisd(ground_pitch, Eigen::Vector3d::UnitZ()));
+    //current_calibration = current_calibration.applyTransform(ground_pitch_transform);
 
 
     applyCalibration(scan1, scan2, cloud1, cloud2, current_calibration);
@@ -631,7 +631,7 @@ bool LidarCalibration::detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> &c
   // segmentation parameters
   seg.setOptimizeCoefficients (true);
 
-  seg.setAxis(Eigen::Vector3f(0,0,1)); // ground is along z-axis of actuator frame (assumption)
+  seg.setAxis((plane_transform_.inverse().rotation() * Eigen::Vector3d(0,0,1)).cast<float>()); // ground is along z-axis of actuator frame (assumption)
   seg.setEpsAngle(M_PI/4); // 45° offset from model
   seg.setModelType(pcl::SACMODEL_PERPENDICULAR_PLANE);
   seg.setMethodType(pcl::SAC_RANSAC);
