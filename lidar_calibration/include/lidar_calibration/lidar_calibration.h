@@ -105,7 +105,7 @@ public:
   void setPeriodicPublishing(bool status, double period);
   void enableNormalVisualization(bool normals);
 
-private:
+protected:
   void publishResults();
   void publishCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud, const ros::Publisher& pub);
   void publishCloud(sensor_msgs::PointCloud2& cloud, const ros::Publisher& pub);

@@ -483,7 +483,7 @@ void LidarCalibration::visualizePlanarity(const pcl::PointCloud<pcl::PointXYZ> &
     }
 
   }
-  ROS_INFO_STREAM("Drawing " << id_cnt << " normals.");
+  //ROS_INFO_STREAM("Drawing " << id_cnt << " normals.");
   planarity_pub_.publish(marker_array);
 }
 
