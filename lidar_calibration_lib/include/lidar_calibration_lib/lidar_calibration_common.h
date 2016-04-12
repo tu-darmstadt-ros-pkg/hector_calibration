@@ -46,12 +46,12 @@ namespace lidar_calibration {
 
 
   std::map<unsigned int, unsigned int> findNeighbors(const pcl::PointCloud<pcl::PointXYZ> &cloud1,
-                                                     const pcl::PointCloud<pcl::PointXYZ> &cloud2, double max_sqr_dist);
+                                                     const pcl::PointCloud<pcl::PointXYZ> &cloud2, double max_sqr_dist = 0.1);
   void publishNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
                          const pcl::PointCloud<pcl::PointXYZ>& cloud2,
                          const std::map<unsigned int, unsigned int>& mapping, ros::Publisher &pub, std::string frame);
 
-  std::vector<WeightedNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud, double radius);
+  std::vector<WeightedNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud, double radius = 0.07);
   void visualizeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud, std::vector<WeightedNormal> &normals);
   void visualizePlanarity(const pcl::PointCloud<pcl::PointXYZ> &cloud, const std::vector<WeightedNormal> &normals, ros::Publisher &pub, std::string frame);
 

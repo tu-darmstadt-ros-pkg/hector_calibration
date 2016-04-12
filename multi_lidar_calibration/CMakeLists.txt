@@ -5,12 +5,16 @@ project(multi_lidar_calibration)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  lidar_calibration
+  lidar_calibration_lib
 )
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
+
+SET(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-
+find_package(Ceres REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -68,6 +72,15 @@ find_package(catkin REQUIRED COMPONENTS
 #   std_msgs  # Or other packages containing msgs
 # )
 
+set(HEADERS
+  include/${PROJECT_NAME}/multi_lidar_calibration.h
+  include/${PROJECT_NAME}/lidar_pose_error.h
+)
+
+set(SOURCES
+  src/multi_lidar_calibration.cpp
+)
+
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
 ################################################
@@ -98,10 +111,13 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES multi_lidar_calibration
-#  CATKIN_DEPENDS lidar_calibration
-#  DEPENDS system_lib
+  INCLUDE_DIRS include
+  LIBRARIES multi_lidar_calibration
+  CATKIN_DEPENDS
+    lidar_calibration_lib
+  DEPENDS 
+    system_lib
+    Ceres
 )
 
 ###########
@@ -112,30 +128,36 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
+  ${CERES_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-# add_library(multi_lidar_calibration
-#   src/${PROJECT_NAME}/multi_lidar_calibration.cpp
-# )
+ add_library(multi_lidar_calibration
+   ${HEADERS} ${SOURCES}
+ )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(multi_lidar_calibration ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(multi_lidar_calibration
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
 
 ## Declare a C++ executable
-# add_executable(multi_lidar_calibration_node src/multi_lidar_calibration_node.cpp)
-
-## Add cmake target dependencies of the executable
-## same as for the library above
-# add_dependencies(multi_lidar_calibration_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(multi_lidar_calibration_node src/multi_lidar_calibration_node.cpp)
+add_dependencies(multi_lidar_calibration_node ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(multi_lidar_calibration_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${CERES_LIBRARIES}
+)
+target_link_libraries(multi_lidar_calibration_node
+  ${PROJECT_NAME}
+)
 
 #############
 ## Install ##

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch> 
-  <node pkg="lidar_calibration" type="lidar_calibration_node" name="lidar_calibration_node" output="screen" args="">
+  <node pkg="lidar_calibration" type="lidar_calibration_node" name="lidar_calibration_node" output="screen" args="--m">
     <param name="actuator_frame" value="head_lidar_actuator_frame"/>
     
     <param name="detect_ceiling" value="true"/>

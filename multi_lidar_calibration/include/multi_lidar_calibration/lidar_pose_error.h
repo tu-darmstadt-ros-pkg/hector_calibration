@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //=================================================================================================
 
-#ifndef POINT_PLANE_ERROR_H
-#define POINT_PLANE_ERROR_H
+#ifndef LIDAR_POSE_ERROR_H
+#define LIDAR_POSE_ERROR_H
 
 #include <ceres/ceres.h>
 #include <pcl/point_types.h>
@@ -42,67 +42,44 @@ using Vector3T = Eigen::Matrix<T, 3, 1>;
 template<typename T>
 using Affine3T = Eigen::Transform<T, 3, Eigen::Affine>;
 
-template<typename Scalar>
-struct LaserPoint {
-  LaserPoint() {}
-
-  LaserPoint(const LaserPoint<double>& lpd) {
-    point = Vector3T<Scalar>(Scalar(lpd.point(0)), Scalar(lpd.point(1)), Scalar(lpd.point(2)));
-    angle = Scalar(lpd.angle);
-  }
-
-  LaserPoint(Vector3T<Scalar> _point, Scalar _angle) {
-    point = _point;
-    angle = _angle;
-  }
-
-  Vector3T<Scalar> getInActuatorFrame(Affine3T<Scalar> calibration) const {
-    Vector3T<Scalar> actuator_frame = Eigen::AngleAxis<Scalar>(angle, Vector3T<Scalar>::UnitX()) * calibration * point;
-    return actuator_frame;
-  }
-
-  Vector3T<Scalar> point;
-  Scalar angle;
-};
-
-struct PointPlaneError {
-  PointPlaneError(const LaserPoint<double>& s1, const LaserPoint<double>& s2, const WeightedNormal& normal) {
-    s1_ = s1;
-    s2_ = s2;
+struct LidarPoseError {
+  LidarPoseError(const Eigen::Vector3d x1, const Eigen::Vector3d& x2, const WeightedNormal& normal) {
+    x1_ = x1;
+    x2_ = x2;
     normal_ = normal;
   }
 
   template<typename T>
   bool operator()(const T* const rpy_rotation, const T* const translation, T* residuals) const{
-    // residual = n' * (Rx*H*s1 - Rx*H*s2)
-    Affine3T<T> calibration(Eigen::AngleAxis<T>(T(rpy_rotation[1]), Vector3T<T>::UnitZ())
-        * Eigen::AngleAxis<T>(T(rpy_rotation[0]), Vector3T<T>::UnitY()));
-    calibration.translation() = Vector3T<T>(T(0.0), T(translation[0]), T(translation[1]));
-
-    LaserPoint<T> s1t(s1_);
-    LaserPoint<T> s2t(s2_);
+    // residual = n' * (x1 - H*x2)
+    Affine3T<T> calibration(
+          Eigen::AngleAxis<T>(T(rpy_rotation[2]), Vector3T<T>::UnitZ())
+        * Eigen::AngleAxis<T>(T(rpy_rotation[1]), Vector3T<T>::UnitY())
+        * Eigen::AngleAxis<T>(T(rpy_rotation[0]), Vector3T<T>::UnitX())
+    );
+    calibration.translation() = Vector3T<T>(T(translation[0]), T(translation[1]), T(translation[2]));
 
     Vector3T<T> nt(T(normal_.normal(0)), T(normal_.normal(1)), T(normal_.normal(2)));
 
-    Vector3T<T> x1 = s1t.getInActuatorFrame(calibration);
-    Vector3T<T> x2 = s2t.getInActuatorFrame(calibration);
+    Vector3T<T> x1(T(x1_(0)), T(x1_(1)), T(x1_(2)));
+    Vector3T<T> x2(T(x2_(0)), T(x2_(1)), T(x2_(2)));
 
-    residuals[0] = T(normal_.weight) * nt.transpose() * (x1 - x2);
+    residuals[0] = T(normal_.weight) * nt.transpose() * (x1 - calibration * x2);
 
     return true;
   }
 
-  static ceres::CostFunction* Create(const LaserPoint<double>& s1, const LaserPoint<double>& s2, const WeightedNormal& normal)
+  static ceres::CostFunction* Create(const Eigen::Vector3d x1, const Eigen::Vector3d& x2, const WeightedNormal& normal)
   {
     ceres::CostFunction* cost_function =
-        new ceres::AutoDiffCostFunction<PointPlaneError, 1, 2, 2>(
-          new PointPlaneError(s1, s2, normal));
+        new ceres::AutoDiffCostFunction<LidarPoseError, 1, 2, 2>(
+          new LidarPoseError(x1, x2, normal));
 
     return cost_function;
   }
 
-  LaserPoint<double> s1_;
-  LaserPoint<double> s2_;
+  Eigen::Vector3d x1_;
+  Eigen::Vector3d x2_;
   WeightedNormal normal_;
 };
 

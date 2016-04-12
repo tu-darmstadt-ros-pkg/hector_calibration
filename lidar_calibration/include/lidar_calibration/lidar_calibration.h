@@ -41,11 +41,8 @@
 // pcl
 #include <pcl_ros/point_cloud.h>
 #include <pcl/common/transforms.h>
-#include <pcl/kdtree/kdtree_flann.h>
-#include <pcl/search/kdtree.h>
 #include <pcl/filters/filter.h>
 #include <pcl/filters/crop_box.h>
-#include <pcl/features/normal_3d.h>
 #include <pcl/filters/passthrough.h>
 
 // pcl segmentation
@@ -55,14 +52,10 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/extract_indices.h>
 
-// pcl vis
-#include <pcl/visualization/pcl_visualizer.h>
-
 // ros
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <std_srvs/Empty.h>
-#include <visualization_msgs/MarkerArray.h>
 
 // tf
 #include <tf/transform_listener.h>
@@ -70,7 +63,6 @@
 
 // ceres solver
 #include <ceres/ceres.h>
-#include <ceres/rotation.h>
 #include <lidar_calibration/point_plane_error.h>
 
 namespace hector_calibration {

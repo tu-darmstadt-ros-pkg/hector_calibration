@@ -72,7 +72,7 @@ void publishCloud(sensor_msgs::PointCloud2& cloud, const ros::Publisher& pub, st
 std::map<unsigned int, unsigned int>
 findNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
               const pcl::PointCloud<pcl::PointXYZ>& cloud2,
-              double max_sqr_dist = 0.1)
+              double max_sqr_dist)
 {
   pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2_ptr(new pcl::PointCloud<pcl::PointXYZ>());
@@ -142,7 +142,7 @@ void publishNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
   pub.publish(marker_array);
 }
 
-std::vector<WeightedNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud, double radius = 0.07)
+std::vector<WeightedNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud, double radius)
 {
   pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>());
