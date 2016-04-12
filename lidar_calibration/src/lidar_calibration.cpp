@@ -327,12 +327,8 @@ void LidarCalibration::calibrate() {
 
     detectGroundPlane(cloud1, cloud2, ground_roll, ground_pitch);
 
-    Eigen::Affine3d ground__roll_transform(Eigen::AngleAxisd(ground_roll, Eigen::Vector3d::UnitX()));
-    current_calibration = current_calibration.applyTransform(ground__roll_transform);
-
-    //Eigen::Affine3d ground_pitch_transform(Eigen::AngleAxisd(ground_pitch, Eigen::Vector3d::UnitZ()));
-    //current_calibration = current_calibration.applyTransform(ground_pitch_transform);
-
+    Eigen::Affine3d ground_roll_transform(Eigen::AngleAxisd(ground_roll, Eigen::Vector3d::UnitX()));
+    current_calibration = current_calibration.applyTransform(ground_roll_transform);
 
     applyCalibration(scan1, scan2, cloud1, cloud2, current_calibration);
     pcl::toROSMsg(cloud1, cloud1_msg_);
