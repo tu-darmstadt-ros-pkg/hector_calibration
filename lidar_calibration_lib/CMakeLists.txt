@@ -6,7 +6,6 @@ project(lidar_calibration_lib)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   hector_calibration_msgs
-  libceres-dev
   pcl_conversions
   pcl_ros
   roscpp
@@ -14,8 +13,19 @@ find_package(catkin REQUIRED COMPONENTS
   tf_conversions
 )
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
+
+SET(CMAKE_BUILD_TYPE RelWithDebInfo)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+find_package(OpenMP)
+if (OPENMP_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
+
+find_package(Ceres REQUIRED)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -74,6 +84,14 @@ find_package(catkin REQUIRED COMPONENTS
 #   hector_calibration_msgs#   sensor_msgs
 # )
 
+set(HEADERS
+  include/${PROJECT_NAME}/lidar_calibration_common.h
+)
+
+set(SOURCES
+  src/lidar_calibration_common.cpp
+)
+
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
 ################################################
@@ -104,10 +122,19 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES lidar_calibration_lib
-#  CATKIN_DEPENDS hector_calibration_msgs libceres-dev pcl_conversions pcl_ros roscpp sensor_msgs tf_conversions
-#  DEPENDS system_lib
+  INCLUDE_DIRS include
+  LIBRARIES lidar_calibration_lib
+  CATKIN_DEPENDS 
+    hector_calibration_msgs 
+    libceres-dev 
+    pcl_conversions 
+    pcl_ros 
+    roscpp 
+    sensor_msgs 
+    tf_conversions
+  DEPENDS 
+    system_lib
+    Ceres
 )
 
 ###########
@@ -118,18 +145,24 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
+  ${CERES_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-# add_library(lidar_calibration_lib
-#   src/${PROJECT_NAME}/lidar_calibration_lib.cpp
-# )
+ add_library(lidar_calibration_lib
+   ${HEADERS} 
+   ${SOURCES}
+ )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(lidar_calibration_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(lidar_calibration_lib   
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
 
 ## Declare a C++ executable
 # add_executable(lidar_calibration_lib_node src/lidar_calibration_lib_node.cpp)
@@ -139,9 +172,10 @@ include_directories(
 # add_dependencies(lidar_calibration_lib_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(lidar_calibration_lib_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${CERES_LIBRARIES}
+)
 
 #############
 ## Install ##
