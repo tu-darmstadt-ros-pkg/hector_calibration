@@ -219,10 +219,14 @@ void LidarCalibration::calibrate() {
           &&  !checkConvergence(previous_calibration, current_calibration));
 
   if (options_.detect_ground_plane || options_.detect_ceiling) {
-    double ground_roll = detectGroundPlane(cloud1, cloud2);
 
-    Eigen::Affine3d ground_transform(Eigen::AngleAxisd(ground_roll, Eigen::Vector3d::UnitX()));
-    current_calibration = current_calibration.applyTransform(ground_transform);
+    double ground_roll;
+    double ground_pitch;
+
+    detectGroundPlane(cloud1, cloud2, ground_roll, ground_pitch);
+
+    Eigen::Affine3d ground_roll_transform(Eigen::AngleAxisd(ground_roll, Eigen::Vector3d::UnitX()));
+    current_calibration = current_calibration.applyTransform(ground_roll_transform);
 
     applyCalibration(scan1, scan2, cloud1, cloud2, current_calibration);
     pcl::toROSMsg(cloud1, cloud1_msg_);
@@ -309,8 +313,10 @@ LidarCalibration::optimizeCalibration(const std::vector<LaserPoint<double> >& sc
   return calibration;
 }
 
-double LidarCalibration::detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> &cloud1,
-                                           const pcl::PointCloud<pcl::PointXYZ> &cloud2) const
+bool LidarCalibration::detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> &cloud1,
+                                           const pcl::PointCloud<pcl::PointXYZ> &cloud2,
+                                           double& roll,
+                                           double& pitch) const
 {
   // merge point clouds
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>());
@@ -347,7 +353,7 @@ double LidarCalibration::detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> 
   // segmentation parameters
   seg.setOptimizeCoefficients (true);
 
-  seg.setAxis(Eigen::Vector3f(0,0,1)); // ground is along z-axis of actuator frame (assumption)
+  seg.setAxis((plane_transform_.inverse().rotation() * Eigen::Vector3d(0,0,1)).cast<float>()); // ground is along z-axis of actuator frame (assumption)
   seg.setEpsAngle(M_PI/4); // 45° offset from model
   seg.setModelType(pcl::SACMODEL_PERPENDICULAR_PLANE);
   seg.setMethodType(pcl::SAC_RANSAC);
@@ -374,19 +380,18 @@ double LidarCalibration::detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> 
   ground_plane_pub_.publish(ground_plane_msg);
 
   // Calculate angle from ground plane to actuator frame around x-axis
-  double ny = coefficients.values[1]; double nz = coefficients.values[2];
+  double nx = coefficients.values[0]; double ny = coefficients.values[1]; double nz = coefficients.values[2];
 
-  double roll = M_PI/2 - std::acos(ny/std::sqrt(std::pow(ny, 2) + std::pow(nz, 2)));
-  // double pitch = M_PI/2 - std::acos(nx/std::sqrt(std::pow(nx, 2) + std::pow(nz, 2))); // not needed
+  roll = M_PI/2 - std::acos(ny/std::sqrt(std::pow(ny, 2) + std::pow(nz, 2)));
+  pitch = M_PI/2 - std::acos(nx/std::sqrt(std::pow(nx, 2) + std::pow(nz, 2))); // not needed
 
   if (options_.detect_ground_plane) {
-    ROS_INFO_STREAM("Detecting ground plane. Roll Angle: " << roll);
+    ROS_INFO_STREAM("Detecting ground plane. Roll Angle: " << roll << " Pitch Angle: " << pitch);
   } else if (options_.detect_ceiling) {
-    ROS_INFO_STREAM("Detecting ceiling. Roll Angle: " << roll);
+    ROS_INFO_STREAM("Detecting ceiling. Roll Angle: " << roll << " Pitch Angle: " << pitch);
   }
 
-
-  return roll;
+  return true;
 }
 
 bool LidarCalibration::checkConvergence(const Calibration& prev_calibration,

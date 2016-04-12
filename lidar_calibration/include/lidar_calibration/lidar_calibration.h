@@ -132,7 +132,10 @@ protected:
                                    const std::vector<WeightedNormal> & normals,
                                    const std::map<unsigned int, unsigned int> neighbor_mapping) const;
 
-  double detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> &cloud1, const pcl::PointCloud<pcl::PointXYZ> &cloud2) const;
+  bool detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> &cloud1,
+                                             const pcl::PointCloud<pcl::PointXYZ> &cloud2,
+                                             double& roll,
+                                             double& pitch) const;
 
   bool checkConvergence(const Calibration& prev_calibration, const Calibration& current_calibration) const;
   bool maxIterationsReached(unsigned int current_iterations) const;
