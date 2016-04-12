@@ -65,20 +65,6 @@ struct LaserPoint {
   Scalar angle;
 };
 
-struct WeightedNormal {
-  WeightedNormal() {
-    weight = 1;
-  }
-
-  WeightedNormal(Eigen::Vector3d _normal, double _weight) {
-    normal = _normal;
-    weight = _weight;
-  }
-
-  Eigen::Vector3d normal;
-  double weight;
-};
-
 struct PointPlaneError {
   PointPlaneError(const LaserPoint<double>& s1, const LaserPoint<double>& s2, const WeightedNormal& normal) {
     s1_ = s1;

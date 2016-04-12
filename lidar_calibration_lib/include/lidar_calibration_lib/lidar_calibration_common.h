@@ -7,16 +7,7 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/search/kdtree.h>
 #include <pcl/filters/filter.h>
-#include <pcl/filters/crop_box.h>
 #include <pcl/features/normal_3d.h>
-#include <pcl/filters/passthrough.h>
-
-// pcl segmentation
-#include <pcl/ModelCoefficients.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/filters/extract_indices.h>
 
 // pcl vis
 #include <pcl/visualization/pcl_visualizer.h>
@@ -24,7 +15,6 @@
 // ros
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <std_srvs/Empty.h>
 #include <visualization_msgs/MarkerArray.h>
 
 namespace hector_calibration {

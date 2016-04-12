@@ -32,6 +32,8 @@
 #include <lidar_calibration/calibration.h>
 #include <hector_calibration_msgs/RequestScans.h>
 
+#include <lidar_calibration_lib/lidar_calibration_common.h>
+
 #include <boost/date_time.hpp>
 
 // standard
@@ -107,12 +109,7 @@ public:
 
 protected:
   void publishResults();
-  void publishCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud, const ros::Publisher& pub);
-  void publishCloud(sensor_msgs::PointCloud2& cloud, const ros::Publisher& pub);
   void timerCallback(const ros::TimerEvent&);
-  void publishNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
-                         const pcl::PointCloud<pcl::PointXYZ>& cloud2,
-                         const std::map<unsigned int, unsigned int>& mapping) const;
 
   void requestScans(std::vector<LaserPoint<double> >& scan1,
                     std::vector<LaserPoint<double> >& scan2);
@@ -127,12 +124,7 @@ protected:
                         const Calibration& calibration);
 
   pcl::PointCloud<pcl::PointXYZ> laserToActuatorCloud(const std::vector<LaserPoint<double> >& laserpoints, const Calibration& calibration) const;
-  std::vector<WeightedNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud) const;
-  void visualizeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud, const pcl::PointCloud<pcl::Normal>& normals) const;
-  void visualizePlanarity(const pcl::PointCloud<pcl::PointXYZ> &cloud, const std::vector<WeightedNormal> &normals) const;
 
-  std::map<unsigned int, unsigned int> findNeighbors(const pcl::PointCloud<pcl::PointXYZ> &cloud1,
-                                                     const pcl::PointCloud<pcl::PointXYZ> &cloud2) const;
 
   Calibration optimizeCalibration(const std::vector<LaserPoint<double> >& scan1,
                                    const std::vector<LaserPoint<double> >& scan2,

@@ -5,12 +5,8 @@ project(lidar_calibration)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  pcl_conversions
-  pcl_ros
   roscpp
-  sensor_msgs
-  hector_calibration_msgs
-  tf_conversions
+  lidar_calibration_lib
 )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
@@ -20,12 +16,6 @@ SET(CMAKE_BUILD_TYPE RelWithDebInfo)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(Ceres REQUIRED)
-
-find_package(OpenMP)
-if (OPENMP_FOUND)
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-endif()
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -119,12 +109,8 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES lidar_calibration
   CATKIN_DEPENDS
-    pcl_conversions
-    pcl_ros 
     roscpp 
-    sensor_msgs
-    hector_calibration_msgs
-    tf_conversions
+    lidar_calibration_lib
   DEPENDS 
     system_lib
     Ceres

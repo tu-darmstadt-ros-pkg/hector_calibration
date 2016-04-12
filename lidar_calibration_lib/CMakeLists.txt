@@ -25,8 +25,6 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-find_package(Ceres REQUIRED)
-
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -126,7 +124,6 @@ catkin_package(
   LIBRARIES lidar_calibration_lib
   CATKIN_DEPENDS 
     hector_calibration_msgs 
-    libceres-dev 
     pcl_conversions 
     pcl_ros 
     roscpp 
@@ -134,7 +131,6 @@ catkin_package(
     tf_conversions
   DEPENDS 
     system_lib
-    Ceres
 )
 
 ###########
@@ -147,7 +143,6 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ${CERES_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -174,7 +169,6 @@ add_dependencies(lidar_calibration_lib
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
-  ${CERES_LIBRARIES}
 )
 
 #############
