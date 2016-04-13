@@ -99,10 +99,10 @@ void publishNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
                       const pcl::PointCloud<pcl::PointXYZ>& cloud2,
                       const std::map<unsigned int, unsigned int> &mapping,
                       ros::Publisher& pub,
-                      std::string frame)
+                      std::string frame,
+                      unsigned int number_of_markers)
 {
   visualization_msgs::MarkerArray marker_array;
-  unsigned int number_of_markers = 100;
   unsigned int step = floor(mapping.size() / number_of_markers);
   unsigned int id_cnt = 0;
   for (std::map<unsigned int, unsigned int>::const_iterator it = mapping.begin();

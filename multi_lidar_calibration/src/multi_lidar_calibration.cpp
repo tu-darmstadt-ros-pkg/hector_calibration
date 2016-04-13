@@ -2,12 +2,31 @@
 
 namespace hector_calibration {
 namespace lidar_calibration {
+
+MultiLidarCalibration::MultiLidarCalibration(ros::NodeHandle nh) :
+  nh_(nh)
+{
+  // Init publishers
+  for (unsigned int i = 0; i < 2; i++) {
+    raw_pub_[i] = nh_.advertise<sensor_msgs::PointCloud2>("raw_cloud" + std::to_string(i), 1000);
+    preprocessed_pub_[i] = nh_.advertise<sensor_msgs::PointCloud2>("preprocessed_cloud" + std::to_string(i), 1000);
+    result_pub_[i] = nh_.advertise<sensor_msgs::PointCloud2>("result_cloud" + std::to_string(i), 1000);
+  }
+  // Load parameters
+  ros::NodeHandle pnh("~");
+  pnh.param<std::string>("base_frame", base_frame_, "base_link");
+}
+
 Eigen::Affine3d
 MultiLidarCalibration::calibrate(pcl::PointCloud<pcl::PointXYZ> cloud1,
                                  pcl::PointCloud<pcl::PointXYZ> cloud2)
 {
+  publishCloud(cloud1, raw_pub_[0], base_frame_);
+  publishCloud(cloud2, raw_pub_[1], base_frame_);
+
   preprocessClouds(cloud1, cloud2);
   std::map<unsigned int, unsigned int> neighbor_mapping = findNeighbors(cloud1, cloud2, 0.1);
+  publishNeighbors(cloud1, cloud2, neighbor_mapping, mapping_pub_, base_frame_, 100);
   std::vector<WeightedNormal> normals = computeNormals(cloud1, 0.07);
   return optimize(cloud1, cloud2, normals, neighbor_mapping);
 }
@@ -20,6 +39,11 @@ MultiLidarCalibration::calibrate(const sensor_msgs::PointCloud2& cloud1_msg,
     ROS_ERROR_STREAM("Frame of cloud 1 (" << cloud1_msg.header.frame_id <<
                      ") doesn't match frame of cloud 2 (" << cloud2_msg.header.frame_id << "). Aborting.");
     return Eigen::Affine3d::Identity();
+  }
+  if (base_frame_ != cloud1_msg.header.frame_id) {
+    ROS_WARN_STREAM("Base frame (" << base_frame_ << ") doesn't match cloud frame id (" << cloud1_msg.header.frame_id << "). \n" <<
+                    "Changing base frame to frame_id.");
+    base_frame_ = cloud1_msg.header.frame_id;
   }
 
   pcl::PointCloud<pcl::PointXYZ> cloud1;
@@ -37,14 +61,43 @@ void MultiLidarCalibration::preprocessClouds(pcl::PointCloud<pcl::PointXYZ>& clo
   cropCloud(cloud2, 1);
   downsampleCloud(cloud1, 0.01f);
   downsampleCloud(cloud2, 0.01f);
+
+  publishCloud(cloud1, preprocessed_pub_[0], base_frame_);
+  publishCloud(cloud2, preprocessed_pub_[1], base_frame_);
 }
 
 void MultiLidarCalibration::cropCloud(pcl::PointCloud<pcl::PointXYZ>& cloud, double distance) {
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+  *cloud_ptr = cloud;
+  // pcl::copyPointCloud(cloud, *cloud_ptr);
+  pcl::CropBox<pcl::PointXYZ> crop_box_filter;
+  crop_box_filter.setInputCloud(cloud_ptr);
+  crop_box_filter.setNegative(true);
+  Eigen::Vector4f box_v(1, 1, 1, 1);
 
+  Eigen::Vector4f min_v = -distance*box_v;
+  min_v[3] = 1;
+  Eigen::Vector4f max_v = distance*box_v;
+  min_v[3] = 1;
+
+  crop_box_filter.setMin(min_v);
+  crop_box_filter.setMax(max_v);
+
+  //pcl::PointCloud<pcl::PointXYZ> cloud_cropped;
+  crop_box_filter.filter(cloud);
+
+  //cloud = cloud_cropped;
 }
 
 void MultiLidarCalibration::downsampleCloud(pcl::PointCloud<pcl::PointXYZ>& cloud, float leaf_size) {
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+  *cloud_ptr = cloud;
 
+  pcl::VoxelGrid<pcl::PointXYZ> vg;
+  vg.setInputCloud(cloud_ptr);
+  vg.setLeafSize(leaf_size, leaf_size, leaf_size);
+
+  vg.filter (cloud);
 }
 
 Eigen::Affine3d
@@ -98,7 +151,20 @@ MultiLidarCalibration::optimize(pcl::PointCloud<pcl::PointXYZ>& cloud1,
   ROS_INFO_STREAM("Optimization result:\n" <<
                   "roll: " << rotation[0] << ", pitch: " << rotation[1] << ", yaw: " << rotation[2] << "\n" <<
                   "x: " << translation[0] << ", y: " << translation[1] <<  ", z: " << translation[2]);
+
   return calibration;
+}
+
+
+void MultiLidarCalibration::publishOptimizationResult(pcl::PointCloud<pcl::PointXYZ>& cloud1,
+                               pcl::PointCloud<pcl::PointXYZ>& cloud2,
+                               Eigen::Affine3d& calibration)
+{
+  pcl::PointCloud<pcl::PointXYZ> cloud2_calibrated;
+  pcl::transformPointCloud(cloud2, cloud2_calibrated, calibration);
+
+  publishCloud(cloud1, result_pub_[0], base_frame_);
+  publishCloud(cloud2_calibrated, result_pub_[1], base_frame_);
 }
 
 

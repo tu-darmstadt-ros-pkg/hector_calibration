@@ -314,9 +314,9 @@ LidarCalibration::optimizeCalibration(const std::vector<LaserPoint<double> >& sc
 }
 
 bool LidarCalibration::detectGroundPlane(const pcl::PointCloud<pcl::PointXYZ> &cloud1,
-                                           const pcl::PointCloud<pcl::PointXYZ> &cloud2,
-                                           double& roll,
-                                           double& pitch) const
+                                         const pcl::PointCloud<pcl::PointXYZ> &cloud2,
+                                         double& roll,
+                                         double& pitch) const
 {
   // merge point clouds
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>());
