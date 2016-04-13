@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+
+<launch>
+    <param name="use_sim_time" value="true" />
+    
+    <arg name="spawn_x_pos" default="0.0" />
+    <arg name="spawn_y_pos" default="0." />
+    <arg name="spawn_z_pos" default="0.25" />
+    <arg name="spawn_yaw"   default="1.57" />
+
+    <!-- send the robot XML to param server -->
+     <!--Switch both below lines to test LIDAR calibration-->
+    <param name="robot_description_gazebo" command="$(find xacro)/xacro.py '$(find argo_robot_gazebo_description)/urdf/argonaut_experimental_decalibrated.gazebo.xacro'" />
+    <!--<param name="robot_description_gazebo" command="$(find xacro)/xacro.py '$(find argo_robot_gazebo_description)/urdf/argonaut_experimental.gazebo.xacro'" />-->
+    <param name="robot_description"        command="$(find xacro)/xacro.py '$(find argo_robot_description)/urdf/argonaut_experimental.urdf.xacro'" />
+
+    <!-- push robot_description to factory and spawn robot in gazebo -->
+    <node name="spawn_robot" pkg="gazebo_ros" type="spawn_model"
+      args="-param robot_description_gazebo
+            -urdf
+            -x $(arg spawn_x_pos)
+            -y $(arg spawn_y_pos)
+            -z $(arg spawn_z_pos)
+            -Y $(arg spawn_yaw)  
+            -J front_flipper_joint -1.57
+            -J rear_flipper_joint -1.57
+            -model robot_description_gazebo"
+      respawn="false" output="screen" />
+
+    <!-- start robot state publisher -->
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen" >
+      <param name="publish_frequency" type="double" value="50.0" />
+      <remap from="joint_states" to="/argonaut_robot/joint_states" />
+    </node>
+    
+    <!--Required due to https://github.com/ros-simulation/gazebo_ros_pkgs/issues/313-->
+    <node pkg="vigir_lidar_intensity_modifier" type="laser_intensity_modifier_node" name="front_laser_intensity_modifier_node">
+      <remap from="scan" to="/front_spinning_lidar/scan_gazebo" />
+      <remap from="scan_out" to="/front_spinning_lidar/scan" />      
+    </node>
+    
+    <node pkg="vigir_lidar_intensity_modifier" type="laser_intensity_modifier_node" name="rear_laser_intensity_modifier_node">
+      <remap from="scan" to="/rear_spinning_lidar/scan_gazebo" />
+      <remap from="scan_out" to="/rear_spinning_lidar/scan" />      
+    </node>  
+    
+    <node pkg="rostopic" type="rostopic" name="front_spinning_lidar_spin_command_pub" args="pub /argonaut_robot/front_spinning_lidar_spin_joint_velocity_controller/command std_msgs/Float64 3.14 -r 1" />
+    
+    <node pkg="rostopic" type="rostopic" name="rear_spinning_lidar_spin_command_pub" args="pub /argonaut_robot/rear_spinning_lidar_spin_joint_velocity_controller/command std_msgs/Float64 3.14 -r 1" />
+
+
+    <node pkg="argo_plan_utils" type="goto_ready_stance.py" name="goto_ready_at_startup">
+      <param name="wait_for_sim" value="true" />
+    </node>  
+    
+    <node name="throttle_left_cam"  pkg="topic_tools" type="throttle"  args="messages /arm_stereo/left/image_raw 1.0 /camera/left/image" respawn="true"/>
+    <node name="relay_left_cam_info"  pkg="topic_tools" type="relay"  args="/arm_stereo/left/camera_info /camera/left/camera_info" respawn="true"/>
+    
+    <node name="flipper_sim_relay"  pkg="topic_tools" type="relay"  args="/argonaut_robot/flipper_traj_controller/state /argonaut_robot/flipper/flipper_traj_controller/state" respawn="true"/>
+ 
+    <!--Nodelet managers for zoom and thermal cam. Started as part of bringup on real robot. See #882 -->
+    <node pkg="nodelet" type="nodelet" name="arm_zoom_cam_nodelet_manager" args="manager" output="screen"/>
+    <node pkg="nodelet" type="nodelet" name="arm_thermal_cam_nodelet_manager" args="manager" output="screen"/>   
+ 
+</launch>

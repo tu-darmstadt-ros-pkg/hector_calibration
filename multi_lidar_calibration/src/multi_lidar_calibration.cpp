@@ -18,20 +18,6 @@ MultiLidarCalibration::MultiLidarCalibration(ros::NodeHandle nh) :
 }
 
 Eigen::Affine3d
-MultiLidarCalibration::calibrate(pcl::PointCloud<pcl::PointXYZ> cloud1,
-                                 pcl::PointCloud<pcl::PointXYZ> cloud2)
-{
-  publishCloud(cloud1, raw_pub_[0], base_frame_);
-  publishCloud(cloud2, raw_pub_[1], base_frame_);
-
-  preprocessClouds(cloud1, cloud2);
-  std::map<unsigned int, unsigned int> neighbor_mapping = findNeighbors(cloud1, cloud2, 0.1);
-  publishNeighbors(cloud1, cloud2, neighbor_mapping, mapping_pub_, base_frame_, 100);
-  std::vector<WeightedNormal> normals = computeNormals(cloud1, 0.07);
-  return optimize(cloud1, cloud2, normals, neighbor_mapping);
-}
-
-Eigen::Affine3d
 MultiLidarCalibration::calibrate(const sensor_msgs::PointCloud2& cloud1_msg,
                                  const sensor_msgs::PointCloud2& cloud2_msg)
 {
@@ -51,6 +37,27 @@ MultiLidarCalibration::calibrate(const sensor_msgs::PointCloud2& cloud1_msg,
   pcl::fromROSMsg(cloud1_msg, cloud1);
   pcl::fromROSMsg(cloud2_msg, cloud2);
   return calibrate(cloud1, cloud2);
+}
+
+Eigen::Affine3d
+MultiLidarCalibration::calibrate(pcl::PointCloud<pcl::PointXYZ> cloud1,
+                                 pcl::PointCloud<pcl::PointXYZ> cloud2)
+{
+  ROS_INFO_STREAM("Starting calibration");
+  publishCloud(cloud1, raw_pub_[0], base_frame_);
+  publishCloud(cloud2, raw_pub_[1], base_frame_);
+
+  ROS_INFO_STREAM("Preprocessing clouds");
+  preprocessClouds(cloud1, cloud2);
+  ROS_INFO_STREAM("Searching neighbors");
+  std::map<unsigned int, unsigned int> neighbor_mapping = findNeighbors(cloud1, cloud2, 0.1);
+  publishNeighbors(cloud1, cloud2, neighbor_mapping, mapping_pub_, base_frame_, 100);
+  ROS_INFO_STREAM("Computing Normals");
+  std::vector<WeightedNormal> normals = computeNormals(cloud1, 0.07);
+  ROS_INFO_STREAM("Starting calibration");
+  Eigen::Affine3d calibration = optimize(cloud1, cloud2, normals, neighbor_mapping);
+  publishOptimizationResult(cloud1, cloud2, calibration);
+  return calibration;
 }
 
 void MultiLidarCalibration::preprocessClouds(pcl::PointCloud<pcl::PointXYZ>& cloud1,
@@ -97,7 +104,7 @@ void MultiLidarCalibration::downsampleCloud(pcl::PointCloud<pcl::PointXYZ>& clou
   vg.setInputCloud(cloud_ptr);
   vg.setLeafSize(leaf_size, leaf_size, leaf_size);
 
-  vg.filter (cloud);
+  vg.filter(cloud);
 }
 
 Eigen::Affine3d

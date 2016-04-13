@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<launch> 
+
+   <!-- Laser to pointcloud -->
+  <node pkg="vigir_laserscan_to_pointcloud" type="laserscan_to_pointcloud_node" name="front_scan_to_clouds_pub_node" output="screen" ns="front_lidar">
+    <remap from="scan" to="/front_spinning_lidar/scan"/>
+    <remap from="scan_cloud" to="/front_lidar/scan_cloud"/>
+    <param name="use_high_fidelity_projection" value="true"/>
+    <param name="target_frame" value="front_spinning_lidar_root_link"/>
+  </node>
+  
+  <node pkg="vigir_laserscan_to_pointcloud" type="laserscan_to_pointcloud_node" name="rear_scan_to_clouds_pub_node" output="screen" ns="rear_lidar">
+    <remap from="scan" to="/rear_spinning_lidar/scan"/>
+    <remap from="scan_cloud" to="/rear_lidar/scan_cloud"/>
+    <param name="use_high_fidelity_projection" value="true"/>
+    <param name="target_frame" value="rear_spinning_lidar_root_link"/>
+  </node>
+  
+  <!-- Accumulated pointcloud -->
+ <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="front_cloud_aggregator_node" output="screen" ns="front_lidar">
+    <remap from="cloud" to="scan_cloud"/>
+    <remap from="cloud_out" to="cloud_agg"/> 
+    <param name="target_frame" value="base_link"/>
+    <param name="publish_frequency_hz" value="0.05"/>
+  </node>   
+  
+  <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="rear_cloud_aggregator_node" output="screen" ns="rear_lidar">
+    <remap from="cloud" to="scan_cloud"/>
+    <remap from="cloud_out" to="cloud_agg"/> 
+    <param name="target_frame" value="base_link"/>
+    <param name="publish_frequency_hz" value="0.05"/>
+  </node>   
+  
+  <!-- Start calibration -->
+  <node pkg="multi_lidar_calibration" type="multi_lidar_calibration_node" name="multi_lidar_calibration_node" output="screen">
+    <param name="base_frame" value="base_link"/>
+
+    <remap from="cloud1" to="/rear_lidar/cloud_agg" />
+    <remap from="cloud2" to="/front_lidar/cloud_agg" />
+  </node>
+</launch>
