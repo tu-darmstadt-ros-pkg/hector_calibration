@@ -36,9 +36,11 @@
     <param name="base_frame" value="base_link"/>
     <param name="max_sqr_dist" value="0.1" />
     <param name="neighbor_mapping_vis_count" value="100" />
-    <param name="normals_radius" value="0.7" />
+    <param name="normals_radius" value="0.07" />
     <param name="crop_dist" value="1.0" />
     <param name="voxel_leaf_size" value="0.01" />
+    <param name="parameter_diff_thres" value="1e-5" />
+    <param name="max_iterations" value="20" />
 
     <remap from="cloud1" to="/rear_lidar/cloud_agg" />
     <remap from="cloud2" to="/front_lidar/cloud_agg" />

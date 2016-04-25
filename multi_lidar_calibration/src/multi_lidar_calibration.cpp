@@ -21,6 +21,8 @@ MultiLidarCalibration::MultiLidarCalibration(ros::NodeHandle nh) :
   pnh.param<double>("normals_radius", normals_radius_, 0.07);
   pnh.param<double>("crop_dist", crop_dist_, 1.0);
   pnh.param<double>("voxel_leaf_size", voxel_leaf_size_, 0.01);
+  pnh.param<int>("max_iterations", max_iterations_, 10);
+  pnh.param<double>("parameter_diff_thres", parameter_diff_thres_, 1e-5);
 }
 
 Eigen::Affine3d
@@ -61,15 +63,68 @@ MultiLidarCalibration::calibrate(pcl::PointCloud<pcl::PointXYZ> cloud1,
   ROS_INFO_STREAM("Cloud 1 preprocessed size: " << cloud1.size());
   ROS_INFO_STREAM("Cloud 2 preprocessed size: " << cloud2.size());
 
-  ROS_INFO_STREAM("Searching neighbors");
-  std::map<unsigned int, unsigned int> neighbor_mapping = findNeighbors(cloud1, cloud2, max_sqr_dist_);
-  publishNeighbors(cloud1, cloud2, neighbor_mapping, mapping_pub_, base_frame_, neighbor_mapping_vis_count_);
   ROS_INFO_STREAM("Computing Normals");
   std::vector<WeightedNormal> normals = computeNormals(cloud1, normals_radius_);
-  ROS_INFO_STREAM("Starting calibration");
-  Eigen::Affine3d calibration = optimize(cloud1, cloud2, normals, neighbor_mapping);
-  publishOptimizationResult(cloud1, cloud2, calibration);
+
+  Eigen::Affine3d calibration = Eigen::Affine3d::Identity();
+  Eigen::Affine3d accumulated_calibration = Eigen::Affine3d::Identity();
+
+  unsigned int iteration_counter = 0;
+  do {
+    ROS_INFO_STREAM("-------------- Starting iteration " << (iteration_counter+1) << "--------------");
+    ROS_INFO_STREAM("Searching neighbors");
+    std::map<unsigned int, unsigned int> neighbor_mapping = findNeighbors(cloud1, cloud2, max_sqr_dist_);
+    publishNeighbors(cloud1, cloud2, neighbor_mapping, mapping_pub_, base_frame_, neighbor_mapping_vis_count_);
+
+    ROS_INFO_STREAM("Starting calibration");
+    calibration = optimize(cloud1, cloud2, normals, neighbor_mapping, Eigen::Affine3d::Identity());
+    pcl::transformPointCloud(cloud2, cloud2, calibration);
+    publishCloud(cloud1, result_pub_[0], base_frame_);
+    publishCloud(cloud2, result_pub_[1], base_frame_);
+
+    accumulated_calibration = accumulated_calibration * calibration;
+    Eigen::Vector3d ypr = accumulated_calibration.linear().eulerAngles(2, 1, 0);
+    Eigen::Vector3d xyz = accumulated_calibration.translation();
+    ROS_INFO_STREAM("Accumulated result:\n" <<
+                    "roll: " << ypr[2] << ", pitch: " << ypr[1] << ", yaw: " << ypr[0] << "\n" <<
+                    "x: " << xyz[0] << ", y: " << xyz[1] <<  ", z: " << xyz[2]);
+
+    iteration_counter++;
+  } while (ros::ok() && !maxIterationsReached(iteration_counter));
+
   return calibration;
+}
+
+bool MultiLidarCalibration::maxIterationsReached(unsigned int current_iterations) const {
+  if (current_iterations < max_iterations_) {
+    return false;
+  }  else {
+    ROS_INFO_STREAM("-------- MAX ITERATIONS REACHED ---------");
+    return true;
+  }
+}
+
+bool MultiLidarCalibration::checkConvergence(const Eigen::Affine3d& prev_calibration,
+                                         const Eigen::Affine3d& current_calibration) const
+{
+  Eigen::Vector3d rpy1 = prev_calibration.linear().eulerAngles(2, 1, 0);
+  Eigen::Vector3d xyz1 = prev_calibration.translation();
+
+  Eigen::Vector3d rpy2 = current_calibration.linear().eulerAngles(2, 1, 0);
+  Eigen::Vector3d xyz2 = current_calibration.translation();
+
+  double cum_sqrt_diff = 0;
+  for (unsigned int i = 0; i < 3; i++) {
+    cum_sqrt_diff += std::pow(rpy1(i) - rpy2(i), 2);
+    cum_sqrt_diff += std::pow(xyz1(i) - xyz2(i), 2);
+  }
+  ROS_INFO_STREAM("Squared change in parameters: " << cum_sqrt_diff);
+  if (cum_sqrt_diff < parameter_diff_thres_) {
+    ROS_INFO_STREAM("-------------- CONVERGENCE --------------");
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void MultiLidarCalibration::preprocessClouds(pcl::PointCloud<pcl::PointXYZ>& cloud1,
@@ -120,10 +175,11 @@ void MultiLidarCalibration::downsampleCloud(pcl::PointCloud<pcl::PointXYZ>& clou
 }
 
 Eigen::Affine3d
-MultiLidarCalibration::optimize(pcl::PointCloud<pcl::PointXYZ>& cloud1,
-              pcl::PointCloud<pcl::PointXYZ>& cloud2,
-              std::vector<WeightedNormal> &normals,
-              std::map<unsigned int, unsigned int> &mapping)
+MultiLidarCalibration::optimize(const pcl::PointCloud<pcl::PointXYZ> &cloud1,
+              const pcl::PointCloud<pcl::PointXYZ> &cloud2,
+              const std::vector<WeightedNormal> &normals,
+              const std::map<unsigned int, unsigned int> &mapping,
+              const Eigen::Affine3d initial_calibration)
 {
   if (cloud1.size() != normals.size()) {
     ROS_ERROR_STREAM("Size of cloud1 (" << cloud1.size() << ") doesn't match size of normals (" << normals.size() << ").");
@@ -132,11 +188,14 @@ MultiLidarCalibration::optimize(pcl::PointCloud<pcl::PointXYZ>& cloud1,
 
   ceres::Problem problem;
 
-  double rotation[3];
+  Eigen::Vector3d rpy = initial_calibration.linear().eulerAngles(2, 1, 0);
+  Eigen::Vector3d xyz = initial_calibration.translation();
+
   double translation[3];
+  double rotation[3];
   for (unsigned int i = 0; i < 3; i++) {
-    rotation[i] = 0;
-    translation[i] = 0;
+    translation[i] = xyz(i);
+    rotation[i] = rpy(2-i);
   }
 
   unsigned int residual_count = 0;
@@ -173,21 +232,6 @@ MultiLidarCalibration::optimize(pcl::PointCloud<pcl::PointXYZ>& cloud1,
 
   return calibration;
 }
-
-
-void MultiLidarCalibration::publishOptimizationResult(pcl::PointCloud<pcl::PointXYZ>& cloud1,
-                               pcl::PointCloud<pcl::PointXYZ>& cloud2,
-                               Eigen::Affine3d& calibration)
-{
-  pcl::PointCloud<pcl::PointXYZ> cloud2_calibrated;
-  pcl::transformPointCloud(cloud2, cloud2_calibrated, calibration);
-
-  publishCloud(cloud1, result_pub_[0], base_frame_);
-  publishCloud(cloud2_calibrated, result_pub_[1], base_frame_);
-  ROS_INFO_STREAM("Calibrated size: " << cloud2_calibrated.size());
-}
-
-
 
 }
 }

@@ -32,14 +32,14 @@ private:
   void cropCloud(pcl::PointCloud<pcl::PointXYZ>& cloud, double distance);
   void downsampleCloud(pcl::PointCloud<pcl::PointXYZ>& cloud, float leaf_size);
 
-  Eigen::Affine3d optimize(pcl::PointCloud<pcl::PointXYZ>& cloud1,
-                pcl::PointCloud<pcl::PointXYZ>& cloud2,
-                std::vector<WeightedNormal>& normals,
-                std::map<unsigned int, unsigned int>& mapping);
-  void publishOptimizationResult(pcl::PointCloud<pcl::PointXYZ>& cloud1,
-                                 pcl::PointCloud<pcl::PointXYZ>& cloud2,
-                                 Eigen::Affine3d& calibration);
-
+  Eigen::Affine3d optimize(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
+                const pcl::PointCloud<pcl::PointXYZ>& cloud2,
+                const std::vector<WeightedNormal>& normals,
+                const std::map<unsigned int, unsigned int>& mapping,
+                const Eigen::Affine3d initial_calibration);
+  bool maxIterationsReached(unsigned int current_iterations) const;
+  bool checkConvergence(const Eigen::Affine3d& prev_calibration,
+                        const Eigen::Affine3d& current_calibration) const;
   ros::Publisher raw_pub_[2];
   ros::Publisher preprocessed_pub_[2];
   ros::Publisher mapping_pub_;
@@ -52,6 +52,8 @@ private:
   double normals_radius_;
   double crop_dist_;
   double voxel_leaf_size_;
+  int max_iterations_;
+  double parameter_diff_thres_;
 
 };
 
