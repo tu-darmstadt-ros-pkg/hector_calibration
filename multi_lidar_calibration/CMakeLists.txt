@@ -150,12 +150,19 @@ add_dependencies(multi_lidar_calibration
 add_executable(multi_lidar_calibration_node src/multi_lidar_calibration_node.cpp)
 add_dependencies(multi_lidar_calibration_node ${catkin_EXPORTED_TARGETS})
 
+add_executable(calibration_test_node src/calibration_test_node.cpp)
+add_dependencies(multi_lidar_calibration_node ${catkin_EXPORTED_TARGETS})
+
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${CERES_LIBRARIES}
 )
 target_link_libraries(multi_lidar_calibration_node
+  ${PROJECT_NAME}
+)
+
+target_link_libraries(calibration_test_node
   ${PROJECT_NAME}
 )
 

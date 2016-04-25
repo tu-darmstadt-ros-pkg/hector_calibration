@@ -21,25 +21,18 @@
     <remap from="cloud" to="scan_cloud"/>
     <remap from="cloud_out" to="cloud_agg"/> 
     <param name="target_frame" value="base_link"/>
-    <param name="publish_frequency_hz" value="0.05"/>
+    <param name="publish_frequency_hz" value="0.2"/>
   </node>   
   
   <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="rear_cloud_aggregator_node" output="screen" ns="rear_lidar">
     <remap from="cloud" to="scan_cloud"/>
     <remap from="cloud_out" to="cloud_agg"/> 
     <param name="target_frame" value="base_link"/>
-    <param name="publish_frequency_hz" value="0.05"/>
+    <param name="publish_frequency_hz" value="0.2"/>
   </node>   
   
-  <!-- Start calibration -->
-  <node pkg="multi_lidar_calibration" type="multi_lidar_calibration_node" name="multi_lidar_calibration_node" output="screen">
-    <param name="base_frame" value="base_link"/>
-    <param name="max_sqr_dist" value="0.1" />
-    <param name="neighbor_mapping_vis_count" value="100" />
-    <param name="normals_radius" value="0.7" />
-    <param name="crop_dist" value="1.0" />
-    <param name="voxel_leaf_size" value="0.01" />
-
+  <!-- Calibration tester -->
+  <node pkg="multi_lidar_calibration" type="calibration_test_node" name="calibration_test_node" output="screen">
     <remap from="cloud1" to="/rear_lidar/cloud_agg" />
     <remap from="cloud2" to="/front_lidar/cloud_agg" />
   </node>

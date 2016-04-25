@@ -72,7 +72,7 @@ struct LidarPoseError {
   static ceres::CostFunction* Create(const Eigen::Vector3d x1, const Eigen::Vector3d& x2, const WeightedNormal& normal)
   {
     ceres::CostFunction* cost_function =
-        new ceres::AutoDiffCostFunction<LidarPoseError, 1, 2, 2>(
+        new ceres::AutoDiffCostFunction<LidarPoseError, 1, 3, 3>(
           new LidarPoseError(x1, x2, normal));
 
     return cost_function;

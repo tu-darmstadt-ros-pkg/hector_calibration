@@ -47,6 +47,11 @@ private:
 
   ros::NodeHandle nh_;
   std::string base_frame_;
+  double max_sqr_dist_;
+  int neighbor_mapping_vis_count_;
+  double normals_radius_;
+  double crop_dist_;
+  double voxel_leaf_size_;
 
 };
 
