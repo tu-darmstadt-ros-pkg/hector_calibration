@@ -38,8 +38,9 @@ private:
                 const std::map<unsigned int, unsigned int>& mapping,
                 const Eigen::Affine3d initial_calibration);
   bool maxIterationsReached(unsigned int current_iterations) const;
-  bool checkConvergence(const Eigen::Affine3d& prev_calibration,
-                        const Eigen::Affine3d& current_calibration) const;
+  bool checkConvergence(const Eigen::Affine3d& calibration) const;
+  bool saveToDisk(std::string path, const Eigen::Affine3d& calibration) const;
+
   ros::Publisher raw_pub_[2];
   ros::Publisher preprocessed_pub_[2];
   ros::Publisher mapping_pub_;
@@ -47,6 +48,7 @@ private:
 
   ros::NodeHandle nh_;
   std::string base_frame_;
+  std::string target_frame_;
   double max_sqr_dist_;
   int neighbor_mapping_vis_count_;
   double normals_radius_;

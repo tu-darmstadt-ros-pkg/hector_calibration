@@ -35,6 +35,7 @@ namespace lidar_calibration {
     double weight;
   };
 
+  double normalizeAngle(double angle);
   template<typename T> bool isValidPoint(const T& point);
   bool isValidCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud);
   template<typename T> pcl::PointCloud<T> removeInvalidPoints(pcl::PointCloud<T>& cloud);
