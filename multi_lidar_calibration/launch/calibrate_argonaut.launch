@@ -21,14 +21,14 @@
     <remap from="cloud" to="scan_cloud"/>
     <remap from="cloud_out" to="cloud_agg"/> 
     <param name="target_frame" value="base_link"/>
-    <param name="publish_frequency_hz" value="0.05"/>
+    <param name="publish_frequency_hz" value="0.025"/>
   </node>   
   
   <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="rear_cloud_aggregator_node" output="screen" ns="rear_lidar">
     <remap from="cloud" to="scan_cloud"/>
     <remap from="cloud_out" to="cloud_agg"/> 
     <param name="target_frame" value="base_link"/>
-    <param name="publish_frequency_hz" value="0.05"/>
+    <param name="publish_frequency_hz" value="0.025"/>
   </node>   
   
   <!-- Start calibration -->
@@ -39,13 +39,13 @@
     <param name="normals_radius" value="0.07" />
     <param name="crop_dist" value="1.0" />
     <param name="voxel_leaf_size" value="0.01" />
-    <param name="parameter_diff_thres" value="0.001" />
+    <param name="parameter_diff_thres" value="1e-3" />
     <param name="max_iterations" value="10" />
     
-    <param name="target_frame" value="rear_spinning_lidar_root_link" /> <!-- should match cloud2 -->
+    <param name="target_frame" value="rear_spinning_lidar_root_link" />
     <param name="save_path" value="$(find argo_robot_description)/calibrations/multi_lidar_calibration.urdf.xacro" />
 
-    <remap from="cloud1" to="/front_lidar/cloud_agg" /> <!-- reference -->
+    <remap from="cloud1" to="/front_lidar/cloud_agg" />
     <remap from="cloud2" to="/rear_lidar/cloud_agg" />
   </node>
 </launch>

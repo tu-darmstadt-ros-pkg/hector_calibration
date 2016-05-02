@@ -5,8 +5,8 @@ namespace lidar_calibration {
 
 double normalizeAngle(double angle) {
     double new_angle = angle;
-    while (new_angle < 0) new_angle += M_PI*2;
-    while (new_angle >= 2*M_PI) new_angle -= M_PI*2;
+    while (new_angle < M_PI) new_angle += M_PI*2;
+    while (new_angle >= M_PI) new_angle -= M_PI*2;
     return new_angle;
 }
 

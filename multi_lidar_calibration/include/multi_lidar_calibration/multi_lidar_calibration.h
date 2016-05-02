@@ -14,6 +14,9 @@
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 
+// tf
+#include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
 
 // ceres solver
 #include <ceres/ceres.h>
@@ -41,14 +44,26 @@ private:
   bool checkConvergence(const Eigen::Affine3d& calibration) const;
   bool saveToDisk(std::string path, const Eigen::Affine3d& calibration) const;
 
+  Eigen::Affine3d getTransform(std::string frame_base, std::string frame_target) const;
+
+  void printCalibration(const Eigen::Affine3d& calibration) const;
+  void printCalibration(double x, double y, double z, double roll, double pitch, double yaw) const;
+
   ros::Publisher raw_pub_[2];
   ros::Publisher preprocessed_pub_[2];
   ros::Publisher mapping_pub_;
   ros::Publisher result_pub_[2];
 
+  tf::TransformListener tfl_;
+  ros::Duration tf_wait_duration_;
+
+  std::string save_path_;
+
   ros::NodeHandle nh_;
   std::string base_frame_;
   std::string target_frame_;
+  Eigen::Affine3d old_transform_;
+
   double max_sqr_dist_;
   int neighbor_mapping_vis_count_;
   double normals_radius_;
