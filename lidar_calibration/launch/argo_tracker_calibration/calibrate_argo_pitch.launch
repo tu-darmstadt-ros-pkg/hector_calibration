@@ -10,7 +10,7 @@
   </node>
   
   <!-- Laser Frame -->
-    <node pkg="tf" type="static_transform_publisher" name="pitch_lidar_laser_frame_pub" args="0 0 0 0 -2.36 0 spin_lidar_pitch_hokuyo_laser_frame pitch_lidar_laser_frame 100" />
+    <node pkg="tf" type="static_transform_publisher" name="pitch_lidar_laser_frame_pub" args="0 0 0 0 -1.57 0 spin_lidar_lidar_mount_link pitch_lidar_laser_frame 100" />
   
   <!-- Actuator Frame -->
   <node pkg="tf" type="static_transform_publisher" name="pitch_lidar_actuator_frame_pub" args="0 0 0 0 -1.57 0 spin_lidar_lidar_mount_link_fixed pitch_lidar_actuator_frame 100" />
