@@ -103,6 +103,27 @@ struct Calibration {
     return Calibration(rotated);
   }
 
+  void threshold(double thres) {
+    if (std::abs(x) < thres) {
+      x = 0;
+    }
+    if (std::abs(y) < thres) {
+      y = 0;
+    }
+    if (std::abs(z) < thres) {
+      z = 0;
+    }
+    if (std::abs(roll) < thres) {
+      roll = 0;
+    }
+    if (std::abs(pitch) < thres) {
+      pitch = 0;
+    }
+    if (std::abs(yaw) < thres) {
+      yaw = 0;
+    }
+  }
+
   double x;
   double y;
   double z;

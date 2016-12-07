@@ -22,6 +22,7 @@ bool isValidCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud) {
   }
   return true;
 }
+
 template<typename T>
 pcl::PointCloud<T> removeInvalidPoints(pcl::PointCloud<T>& cloud) {
   pcl::PointCloud<T> cleaned_cloud;
@@ -582,7 +583,8 @@ LidarCalibration::optimizeCalibration(const std::vector<LaserPoint<double> >& sc
   calibration.yaw = rotation[1];
 
   Calibration rotated_calibration = calibration.applyRotationOffset(rotation_offset_);
-//  ROS_INFO_STREAM("Optimization original: " << calibration.toString());
+  rotated_calibration.threshold(1e-3);
+  ROS_INFO_STREAM("Optimization original: " << calibration.toString());
   ROS_INFO_STREAM("Optimization   result: " << rotated_calibration.toString());
   return calibration;
 }
@@ -703,7 +705,7 @@ bool LidarCalibration::saveToDisk(std::string path, const Calibration& calibrati
     Eigen::Affine3d HV = calibration.getTransform()*laser_transform_;
     C = Calibration(HV);
   }
-
+  C.threshold(1e-3);
   boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
 
   std::ofstream outfile (path);
@@ -717,8 +719,8 @@ bool LidarCalibration::saveToDisk(std::string path, const Calibration& calibrati
       "<!-- |    EDITING THIS FILE BY HAND IS NOT RECOMMENDED                                 | -->" << std::endl <<
       "<!-- =================================================================================== -->" << std::endl;
   outfile << "<robot xmlns:xacro=\"http://www.ros.org/wiki/xacro\" name=\"calibration\">" << std::endl;
-  outfile << "  <origin rpy=\"" << C.roll << " " << C.pitch << " " << C.yaw << "\" ";
-  outfile << "xyz=\"" << C.x << " " << C.y << " " << C.z << "\"/>" << std::endl;
+  outfile << "  <origin xyz=\"" << C.x << " " << C.y << " " << C.z << "\" ";
+  outfile << "rpy=\"" << C.roll << " " << C.pitch << " " << C.yaw << "\"/>" << std::endl;
   outfile << "</robot>";
   outfile.close();
   return true;
