@@ -57,7 +57,7 @@ sudo apt-get install libceres-dev
 
 | Parameter | Type | Default | Description |
 |:-----|:-----|:-----|:-----|
-| actuator_frame | String | "lidar_actuator_frame" | Name of the actuator frame. |
+| actuator_frame | String | "lidar_actuator_frame" | Name of the actuator frame. This is the frame where the actuator is mounted. It does not rotate (fixed relative to the robot base link).|
 | max_iterations | Integer | 20 | Maximum number of outer iterations. |
 | max_sqrt_neighbor_dist | Double | 0.1 | Maximum squared distance of a neighbor. Increase this if not enough neighbors are found. |
 | sqrt_convergence_diff_thres | Double | 1e-6 | If the squared change between the current and last calibration is smaller, iteration stops. |
@@ -65,10 +65,10 @@ sudo apt-get install libceres-dev
 | detect_ground_plane | Boolean | false | If enabled, calibrates roll-angle by detecting and rectifying the ground plane. |
 | save_calibration | Boolean | false | If enabled, saves the calibration as an urdf origin-block to the location specified by *save_path*. |
 | save_path | String | "" | Full save path for calibration file. |
-| rotation_offset_roll | Double | 0.0 | Specify an offset if your laser frame doesn't follow ros conventions (rotate around x-axis). |
-| rotation_offset_pitch | Double | 0.0 | Specify an offset if your laser frame doesn't follow ros conventions (rotate around x-axis). |
-| rotation_offset_yaw | Double | 0.0 | Specify an offset if your laser frame doesn't follow ros conventions (rotate around x-axis). |
-| o_spin_frame | String | "" | Base frame where calibration has to be applied. Will only affect saved calibration. |
+| rotation_offset_roll | Double | 0.0 | Specify an offset if your actuator frame doesn't follow ros conventions (rotate around x-axis). |
+| rotation_offset_pitch | Double | 0.0 | Specify an offset if your actuator frame doesn't follow ros conventions (rotate around x-axis). |
+| rotation_offset_yaw | Double | 0.0 | Specify an offset if your actuator frame doesn't follow ros conventions (rotate around x-axis). |
+| o_spin_frame | String | "" | Base frame where calibration has to be applied. Will only affect saved calibration. The spin frame is child of the actuator frame it has the same position/orientation but rotates.|
 | o_laser_frame | String | "" | Target frame where calibration has to be applied. Will only affect saved calibration. |
 | tf_wait_duration | Double | 5 | Duration to wait for transformation between *o_spin_frame* and *o_laser_frame*. |
 
