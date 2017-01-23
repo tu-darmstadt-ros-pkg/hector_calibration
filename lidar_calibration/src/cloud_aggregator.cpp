@@ -153,8 +153,7 @@ namespace lidar_calibration {
       double roll, pitch, yaw;
       tf::Matrix3x3(transform.getRotation()).getRPY(roll, pitch, yaw);
 
-      if (((prior_roll_angle_ < (-M_PI*0.5)) && (roll > (-M_PI*0.5))) ||
-          ((prior_roll_angle_ < ( M_PI*0.5)) && (roll > ( M_PI*0.5)))){
+      if (prior_roll_angle_ < 0 && roll > 0 || prior_roll_angle_ > 0 && roll < 0) {
         // mark cloud as complete
         captured_clouds_++;
         savePointCloud(cloud_in, transform);
