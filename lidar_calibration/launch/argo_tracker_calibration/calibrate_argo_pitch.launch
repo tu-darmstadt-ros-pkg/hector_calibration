@@ -36,7 +36,7 @@
     <param name="tf_wait_duration" value="10"/>
      
     <param name="save_calibration" value="true"/> 
-    <param name="save_path" value="$(find argo_tracker_description)/calibrations/spinning_pitched_lidar_calibration.urdf.xacro"/>
+    <param name="save_path" value="$(find argo_tracker_description)/calibrations/$(optenv ARGO_ROBOT_TYPE atex_robot)_spinning_pitch_lidar_calibration.urdf.xacro"/>
     
     <remap from="request_scans" to="/pitch_lidar/request_scans" />
     <remap from="reset_clouds" to="/pitch_lidar/reset_clouds" />
