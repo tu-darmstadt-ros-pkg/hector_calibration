@@ -11,10 +11,9 @@ namespace lidar_calibration {
 
     scan_sub_ = nh_.subscribe("cloud", 10, &CalibrationCloudAggregator::cloudCallback, this);
     reset_sub_ = nh_.subscribe("reset_clouds", 10, &CalibrationCloudAggregator::resetCallback, this);
-    point_cloud1_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("half_scan_1",10,false);
-    point_cloud2_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("half_scan_2",10,false);
+    point_cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("scan",10,false);
 
-    reset_clouds_srv_ = nh_.advertiseService("reset_clouds", &CalibrationCloudAggregator::resetSrvCallback, this);
+    reset_cloud_srv_ = nh_.advertiseService("reset_clouds", &CalibrationCloudAggregator::resetSrvCallback, this);
 
     ros::NodeHandle pnh_("~");
     pnh_.param("target_frame", p_target_frame_, std::string("base_link"));
@@ -27,11 +26,10 @@ namespace lidar_calibration {
   }
 
   void CalibrationCloudAggregator::publishClouds() {
-    if (captured_clouds_ < 3) {
+    if (captured_clouds_ < 2) {
       return;
     }
-    publishCloud(point_cloud1_pub_, cloud1_);
-    publishCloud(point_cloud2_pub_, cloud2_);
+    publishCloud(point_cloud_pub_, cloud_);
   }
 
   void CalibrationCloudAggregator::publishCloud(const ros::Publisher& pub, sensor_msgs::PointCloud2& cloud_msg) {
@@ -72,21 +70,20 @@ namespace lidar_calibration {
   }
 
   void CalibrationCloudAggregator::resetCallback(const std_msgs::Empty::ConstPtr&) {
-    resetClouds();
+    resetCloud();
   }
 
   bool CalibrationCloudAggregator::resetSrvCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&) {
-    resetClouds();
+    resetCloud();
     return true;
   }
 
-  void CalibrationCloudAggregator::resetClouds() {
-    cloud_agg1_.clear();
-    cloud_agg2_.clear();
+  void CalibrationCloudAggregator::resetCloud() {
+    cloud_agg_.clear();
     captured_clouds_ = 0;
     prior_roll_angle_ = 0.0;
-    request_scans_srv_.shutdown();
-    ROS_INFO_STREAM("[CloudAggregator] Resetted half scans.");
+    request_scan_srv_.shutdown();
+    ROS_INFO_STREAM("[CloudAggregator] Resetted scan.");
   }
 
   void CalibrationCloudAggregator::scanToMsg(const std::vector<pc_roll_tuple>& cloud_agg,
@@ -111,17 +108,16 @@ namespace lidar_calibration {
   }
 
 
-  bool CalibrationCloudAggregator::requestScansCallback(
+  bool CalibrationCloudAggregator::requestScanCallback(
       hector_calibration_msgs::RequestScans::Request& request,
       hector_calibration_msgs::RequestScans::Response& response) {
-    scanToMsg(cloud_agg1_, response.scan_1, response.angles1);
-    scanToMsg(cloud_agg2_, response.scan_2, response.angles2);
+    scanToMsg(cloud_agg_, response.scan_1, response.angles1);
     return true;
   }
 
 
   void CalibrationCloudAggregator::savePointCloud(const sensor_msgs::PointCloud2::ConstPtr& pc_msg, const tf::StampedTransform &transform) {
-    if (captured_clouds_ == 0) { // skip first half scan
+    if (captured_clouds_ == 0) { // skip first scan
       return;
     }
 
@@ -132,18 +128,14 @@ namespace lidar_calibration {
     double roll, pitch, yaw;
     tf::Matrix3x3(transform.getRotation()).getRPY(roll, pitch, yaw);
 
-    // add point cloud to current aggregator
-    if (captured_clouds_ % 2 == 1) {
-      cloud_agg1_.push_back(pc_roll_tuple(pc, roll));
-    } else if (captured_clouds_ % 2 == 0) {
-      cloud_agg2_.push_back(pc_roll_tuple(pc, roll));
-    }
+    // add point cloud to aggregator
+    cloud_agg_.push_back(pc_roll_tuple(pc, roll));
   }
 
   void CalibrationCloudAggregator::cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_in) {
     laser_frame_ = cloud_in->header.frame_id;
-    if (captured_clouds_ > rotations_*2) {
-      // don't need more than rotations*2 half scans (dump first)
+    if (captured_clouds_ > rotations_) {
+      // don't need more than rotations scans (dump first)
       return;
     }
     if (tfl_->waitForTransform(p_target_frame_, cloud_in->header.frame_id, cloud_in->header.stamp, wait_duration_)) {
@@ -153,15 +145,14 @@ namespace lidar_calibration {
       double roll, pitch, yaw;
       tf::Matrix3x3(transform.getRotation()).getRPY(roll, pitch, yaw);
 
-      if (prior_roll_angle_ < 0 && roll > 0 || prior_roll_angle_ > 0 && roll < 0) {
+      if (prior_roll_angle_ < 0 && roll > 0) {
         // mark cloud as complete
         captured_clouds_++;
         savePointCloud(cloud_in, transform);
-        ROS_INFO_STREAM("[CloudAggregator] Captured half scan number: " << captured_clouds_ << "/" << (rotations_*2+1));
-        if (captured_clouds_ == rotations_*2 + 1) {
-          request_scans_srv_ = nh_.advertiseService("request_scans", &CalibrationCloudAggregator::requestScansCallback, this);
-          transformCloud(cloud_agg1_, cloud1_);
-          transformCloud(cloud_agg2_, cloud2_);
+        ROS_INFO_STREAM("[CloudAggregator] Captured scan number: " << captured_clouds_ << "/" << (rotations_+1));
+        if (captured_clouds_ == rotations_ + 1) {
+          request_scan_srv_ = nh_.advertiseService("request_scan", &CalibrationCloudAggregator::requestScanCallback, this);
+          transformCloud(cloud_agg_, cloud_);
           publishClouds();
         }
       } else {

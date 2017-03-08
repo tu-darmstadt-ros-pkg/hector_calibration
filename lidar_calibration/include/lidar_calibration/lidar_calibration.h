@@ -180,8 +180,12 @@ private:
 
   Eigen::Affine3d rotation_offset_;
 
-  ros::ServiceClient request_scans_client_;
-  ros::ServiceClient reset_clouds_client_;
+  ros::ServiceClient request_scan1_client_;
+  ros::ServiceClient request_scan2_client_;
+
+  ros::ServiceClient reset_scan1_client_;
+  ros::ServiceClient reset_scan2_client_;
+
 
   bool manual_mode_;
   bool vis_normals_;

@@ -79,6 +79,12 @@ struct WeightedNormal {
   double weight;
 };
 
+template<typename T>
+void printVector(const Vector3T<T>& vec, std::string prefix) {
+  if (ceres::IsNaN(vec(0)) || ceres::IsNaN(vec(1)) || ceres::IsNaN(vec(2)))
+    std::cout << prefix << ": [" << vec(0) << ", " << vec(1) << ", " << vec(2) << "]" << std::endl;
+}
+
 struct PointPlaneError {
   PointPlaneError(const LaserPoint<double>& s1, const LaserPoint<double>& s2, const WeightedNormal& normal) {
     s1_ = s1;
@@ -88,18 +94,25 @@ struct PointPlaneError {
 
   template<typename T>
   bool operator()(const T* const rpy_rotation, const T* const translation, T* residuals) const{
-    // residual = n' * (Rx*H*s1 - Rx*H*s2)
-    Affine3T<T> calibration(Eigen::AngleAxis<T>(T(rpy_rotation[1]), Vector3T<T>::UnitZ())
-        * Eigen::AngleAxis<T>(T(rpy_rotation[0]), Vector3T<T>::UnitY()));
-    calibration.translation() = Vector3T<T>(T(0.0), T(translation[0]), T(translation[1]));
+    // residual = n' * (Rx*s1 - Rx*H*s2)
+    Affine3T<T> calibration(Eigen::AngleAxis<T>(rpy_rotation[2], Vector3T<T>::UnitZ())
+        * Eigen::AngleAxis<T>(rpy_rotation[1], Vector3T<T>::UnitY())
+        * Eigen::AngleAxis<T>(rpy_rotation[0], Vector3T<T>::UnitX()));
+    calibration.translation() = Vector3T<T>(translation[0], translation[1], translation[2]);
 
     LaserPoint<T> s1t(s1_);
     LaserPoint<T> s2t(s2_);
 
     Vector3T<T> nt(T(normal_.normal(0)), T(normal_.normal(1)), T(normal_.normal(2)));
 
-    Vector3T<T> x1 = s1t.getInActuatorFrame(calibration);
+    Vector3T<T> x1 = s1t.getInActuatorFrame(Affine3T<T>::Identity());
     Vector3T<T> x2 = s2t.getInActuatorFrame(calibration);
+
+    printVector<T>(nt, "nt");
+    printVector<T>(x1, "x1");
+    printVector<T>(x2, "x2");
+    //std::cout << "residual: " << residuals[0] << std::endl;
+//    std::cout << std::endl;
 
     residuals[0] = T(normal_.weight) * nt.transpose() * (x1 - x2);
 
@@ -109,7 +122,7 @@ struct PointPlaneError {
   static ceres::CostFunction* Create(const LaserPoint<double>& s1, const LaserPoint<double>& s2, const WeightedNormal& normal)
   {
     ceres::CostFunction* cost_function =
-        new ceres::AutoDiffCostFunction<PointPlaneError, 1, 2, 2>(
+        new ceres::AutoDiffCostFunction<PointPlaneError, 1, 3, 3>(
           new PointPlaneError(s1, s2, normal));
 
     return cost_function;

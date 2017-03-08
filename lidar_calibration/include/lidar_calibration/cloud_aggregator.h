@@ -68,24 +68,23 @@ private:
   void timerCallback(const ros::TimerEvent&);
   void cloudCallback (const sensor_msgs::PointCloud2::ConstPtr& cloud_in);
   void resetCallback(const std_msgs::Empty::ConstPtr&);
-  bool requestScansCallback(hector_calibration_msgs::RequestScans::Request& request,
+  bool requestScanCallback(hector_calibration_msgs::RequestScans::Request& request,
                               hector_calibration_msgs::RequestScans::Response& response);
   bool resetSrvCallback(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
   void publishCloud(const ros::Publisher& pub, sensor_msgs::PointCloud2 &cloud_msg);
 
 protected:
-  void resetClouds();
+  void resetCloud();
   void savePointCloud(const sensor_msgs::PointCloud2::ConstPtr& pc_msg, const tf::StampedTransform& transform);
   void transformCloud(const std::vector<pc_roll_tuple>& cloud_agg, sensor_msgs::PointCloud2& cloud);
   void scanToMsg(const std::vector<pc_roll_tuple>& cloud_agg, sensor_msgs::PointCloud2& scan, std_msgs::Float64MultiArray& angles);
   ros::NodeHandle nh_;
   ros::Subscriber scan_sub_;
   ros::Subscriber reset_sub_;
-  ros::Publisher point_cloud1_pub_;
-  ros::Publisher point_cloud2_pub_;
+  ros::Publisher point_cloud_pub_;
 
-  ros::ServiceServer request_scans_srv_;
-  ros::ServiceServer reset_clouds_srv_;
+  ros::ServiceServer request_scan_srv_;
+  ros::ServiceServer reset_cloud_srv_;
 
   boost::shared_ptr<tf::TransformListener> tfl_;
   ros::Duration wait_duration_;
@@ -98,18 +97,14 @@ protected:
   unsigned int captured_clouds_;
   int rotations_;
 
-  std::vector<pc_roll_tuple> cloud_agg1_;
-  std::vector<pc_roll_tuple> cloud_agg2_;
+  std::vector<pc_roll_tuple> cloud_agg_;
 
-  sensor_msgs::PointCloud2 half_scan1_;
-  std::vector<double> angles1_;
-  sensor_msgs::PointCloud2 half_scan2_;
-  std::vector<double> angles2_;
+  sensor_msgs::PointCloud2 half_scan_;
+  std::vector<double> angles_;
 
   std::string laser_frame_;
 
-  sensor_msgs::PointCloud2 cloud1_;
-  sensor_msgs::PointCloud2 cloud2_;
+  sensor_msgs::PointCloud2 cloud_;
 
   ros::Timer timer_;
 };

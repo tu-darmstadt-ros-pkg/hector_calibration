@@ -170,8 +170,10 @@ LidarCalibration::LidarCalibration(const ros::NodeHandle& nh) :
   neighbor_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("neighbor_mapping", 1000);
   planarity_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("planarity", 1000);
 
-  request_scans_client_ = nh_.serviceClient<hector_calibration_msgs::RequestScans>("request_scans");
-  reset_clouds_client_ = nh_.serviceClient<std_srvs::Empty>("reset_clouds");
+  request_scan1_client_ = nh_.serviceClient<hector_calibration_msgs::RequestScans>("request_scan1");
+  request_scan2_client_ = nh_.serviceClient<hector_calibration_msgs::RequestScans>("request_scan2");
+  reset_scan1_client_ = nh_.serviceClient<std_srvs::Empty>("reset_scan1");
+  reset_scan2_client_ = nh_.serviceClient<std_srvs::Empty>("reset_scan2");
 
   ros::NodeHandle pnh("~");
   pnh.param<std::string>("actuator_frame", actuator_frame_, "lidar_actuator_frame");
@@ -254,23 +256,18 @@ void LidarCalibration::requestScans(std::vector<LaserPoint<double> >& scan1,
                   std::vector<LaserPoint<double> >& scan2) {
   hector_calibration_msgs::RequestScansRequest request;
   hector_calibration_msgs::RequestScansResponse response;
-  request_scans_client_.waitForExistence();
-  request_scans_client_.call(request, response);
+  request_scan1_client_.waitForExistence();
+  request_scan1_client_.call(request, response);
   scan1 = msgToLaserPoints(response.scan_1, response.angles1);
-  scan2 = msgToLaserPoints(response.scan_2, response.angles2);
+
+  request_scan2_client_.waitForExistence();
+  request_scan2_client_.call(request, response);
+  scan2 = msgToLaserPoints(response.scan_1, response.angles1);
+
   laser_frame_ = response.scan_1.header.frame_id;
-  if (scan2.size() < scan1.size()) { // Switch scan1 and scan2
-    std::vector<LaserPoint<double> >tmp = scan1;
-    scan1 = scan2;
-    scan2 = tmp;
-  }
 }
 
 void LidarCalibration::calibrate() {
-  reset_clouds_client_.waitForExistence();
-  std_srvs::Empty empty_srv;
-//  reset_clouds_client_.call(empty_srv);
-
   std::vector<LaserPoint<double> > scan1;
   std::vector<LaserPoint<double> > scan2;
   requestScans(scan1, scan2);
@@ -280,7 +277,7 @@ void LidarCalibration::calibrate() {
   if (o_laser_frame_ != "" && o_spin_frame_ != "") {
     laser_transform_ = getTransform(o_spin_frame_, o_laser_frame_);
   }
-  if (ground_frame_ != "") {
+  if (ground_frame_ != "" && (options_.detect_ground_plane || options_.detect_ceiling)) {
     plane_transform_ = getTransform(ground_frame_, actuator_frame_);
   }
 
@@ -289,6 +286,9 @@ void LidarCalibration::calibrate() {
 
   pcl::PointCloud<pcl::PointXYZ> cloud1;
   pcl::PointCloud<pcl::PointXYZ> cloud2;
+
+  cloud1 = laserToActuatorCloud(scan1, Calibration());
+  std::vector<WeightedNormal> normals = computeNormals(cloud1);
 
   Calibration previous_calibration = options_.init_calibration;
   Calibration current_calibration = options_.init_calibration;
@@ -305,8 +305,6 @@ void LidarCalibration::calibrate() {
     publishCloud(cloud1_msg_, cloud1_pub_);
     publishCloud(cloud2_msg_, cloud2_pub_);
 
-    // Compute normals with weight
-    std::vector<WeightedNormal> normals = computeNormals(cloud1);
 
     // Find neighbors
     std::map<unsigned int, unsigned int> neighbor_mapping = findNeighbors(cloud1, cloud2);
@@ -366,7 +364,7 @@ void LidarCalibration::applyCalibration(const std::vector<LaserPoint<double> > &
                                         pcl::PointCloud<pcl::PointXYZ>& cloud2,
                                         const Calibration& calibration)
 {
-  cloud1 = laserToActuatorCloud(scan1, calibration);
+  cloud1 = laserToActuatorCloud(scan1, Calibration());
   cloud2 = laserToActuatorCloud(scan2, calibration);
 }
 
@@ -555,8 +553,8 @@ LidarCalibration::optimizeCalibration(const std::vector<LaserPoint<double> >& sc
 
   ceres::Problem problem;
 
-  double rotation[2] = {current_calibration.pitch, current_calibration.yaw};
-  double translation[2] = {current_calibration.y, current_calibration.z};
+  double rotation[3] = {current_calibration.roll, current_calibration.pitch, current_calibration.yaw};
+  double translation[3] = {current_calibration.x, current_calibration.y, current_calibration.z};
 
   unsigned int residual_count = 0;
   for(std::map<unsigned int, unsigned int>::const_iterator it = neighbor_mapping.begin(); it != neighbor_mapping.end(); it++) {
@@ -577,10 +575,12 @@ LidarCalibration::optimizeCalibration(const std::vector<LaserPoint<double> >& sc
   std::cout << summary.BriefReport() << "\n";
 
   Calibration calibration;
-  calibration.y = translation[0];
-  calibration.z = translation[1];
-  calibration.pitch = rotation[0];
-  calibration.yaw = rotation[1];
+  calibration.x = translation[0];
+  calibration.y = translation[1];
+  calibration.z = translation[2];
+  calibration.roll = rotation[0];
+  calibration.pitch = rotation[1];
+  calibration.yaw = rotation[2];
 
   Calibration rotated_calibration = calibration.applyRotationOffset(rotation_offset_);
   rotated_calibration.threshold(1e-3);
