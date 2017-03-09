@@ -49,7 +49,7 @@
     <param name="o_laser_frame" value="spin_lidar_vertical_hokuyo_laser_frame"/> <!-- laser frame-->
     <param name="tf_wait_duration" value="10"/>
      
-    <param name="save_calibration" value="false"/> 
+    <param name="save_calibration" value="true"/> 
     <param name="save_path" value="$(find argo_tracker_description)/calibrations/$(optenv ARGO_ROBOT_TYPE atex_robot)_spinning_vertical_lidar_calibration.urdf.xacro"/>
     
     <remap from="request_scan1" to="/pitch_lidar/request_scan" />
