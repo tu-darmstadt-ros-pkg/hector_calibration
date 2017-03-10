@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+ 
+ <launch>  
+  <node pkg="lidar_extrinsic_calibration" type="lidar_ground_calibration_node" name="lidar_ground_calibration_node" output="screen" ns="lidar_extrinsic_calibration">
+    <param name="ground_frame" value="base_link"/>
+    <param name="tf_wait_duration" value="10"/>
+    
+    <remap from="cloud" to="/scan_cloud_aggregated" />
+  </node>
+</launch>
