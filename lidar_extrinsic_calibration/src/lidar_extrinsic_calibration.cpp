@@ -3,7 +3,8 @@
 namespace hector_calibration {
 
 LidarExtrinsicCalibration::LidarExtrinsicCalibration(ros::NodeHandle &nh) :
-nh_(nh) {
+nh_(nh),
+first_cloud_(true) {
   cloud_sub_ = nh_.subscribe("cloud", 1000, &LidarExtrinsicCalibration::pointCloudCb, this);
   result_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("result", 1000);
   ground_plane_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("ground_plane", 1000);
@@ -26,6 +27,8 @@ void LidarExtrinsicCalibration::calibrateGround() {
   // convert msg to pointcloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::fromROSMsg(*last_cloud_ptr_, *pcl_cloud_ptr);
+
+  ROS_INFO_STREAM("Point cloud size: " << pcl_cloud_ptr->size());
 
   // Transform to ground frame
   Eigen::Affine3d plane_transform = getTransform(ground_frame_, last_cloud_ptr_->header.frame_id);
@@ -91,6 +94,10 @@ void LidarExtrinsicCalibration::calibrateGround() {
 }
 
 void LidarExtrinsicCalibration::pointCloudCb(const sensor_msgs::PointCloud2ConstPtr& cloud_ptr) {
+  if (first_cloud_) {
+    first_cloud_ = false;
+    return;
+  }
   last_cloud_ptr_ = cloud_ptr;
 }
 

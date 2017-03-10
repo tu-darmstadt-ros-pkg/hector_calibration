@@ -12,5 +12,6 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh;
   hector_calibration::LidarExtrinsicCalibration calibration(nh);
   calibration.calibrateGround();
+  ros::spin();
   return 0;
 }

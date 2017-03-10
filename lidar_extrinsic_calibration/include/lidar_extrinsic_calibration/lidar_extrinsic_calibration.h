@@ -32,6 +32,7 @@ namespace hector_calibration {
     ros::Publisher ground_plane_pub_;
 
     sensor_msgs::PointCloud2ConstPtr last_cloud_ptr_;
+    bool first_cloud_;
 
     std::string ground_frame_;
     ros::Duration tf_wait_duration_;
