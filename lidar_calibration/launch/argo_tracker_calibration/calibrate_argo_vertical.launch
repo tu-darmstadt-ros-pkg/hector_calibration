@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+ 
+ <launch>
+   <!-- Laser to Pointcloud -->
+  <node pkg="vigir_laserscan_to_pointcloud" type="laserscan_to_pointcloud_node" name="scan_to_clouds_pub_node" output="screen" ns="vertical_lidar">
+    <remap from="scan" to="/spin_laser/vertical_scan"/>
+    <remap from="scan_cloud" to="/vertical_lidar/scan_cloud"/>
+    <param name="use_high_fidelity_projection" value="true"/>
+    <param name="target_frame" value="vertical_lidar_laser_frame"/>
+  </node>
+  
+  <!-- Laser Frame -->
+    <node pkg="tf" type="static_transform_publisher" name="vertical_lidar_laser_frame_pub" args="0 0 0 -1.57 0 0 spin_lidar_vertical_hokuyo_laser_frame vertical_lidar_laser_frame 100" />
+  
+  <!-- Actuator Frame -->
+  <node pkg="tf" type="static_transform_publisher" name="vertical_lidar_actuator_frame_pub" args="0 0 0 0 -1.57 0 spin_lidar_lidar_mount_link_fixed vertical_lidar_actuator_frame 100" />
+  
+  <!-- Aggregator -->
+   <node pkg="lidar_calibration" type="cloud_aggregator_node" name="cloud_aggregator_node" output="screen" ns="vertical_lidar">
+    <remap from="cloud" to="scan_cloud"/>
+    <param name="target_frame" value="vertical_lidar_actuator_frame"/>
+    <param name="rotations" value="1" />
+  </node> 
+  
+  <!-- Calibration -->
+  <node pkg="lidar_calibration" type="lidar_calibration_node" name="lidar_calibration_node" output="screen" ns="vertical_lidar_calibration" args="--m">
+    <param name="actuator_frame" value="vertical_lidar_actuator_frame"/>
+    <param name="rotation_offset_pitch" value="-1.57"/>
+    <param name="detect_ground_plane" value="false"/> <!-- spinning axis not parallel to ground -->
+    <param name="detect_ceiling" value="false"/>
+    <param name="ground_frame" value="base_link"/>
+    
+    <!-- these have to be part of URDF (not just tf) -->
+    <param name="o_spin_frame" value="spin_lidar_lidar_mount_link"/> <!-- spinning frame -->
+    <param name="o_laser_frame" value="spin_lidar_vertical_hokuyo_laser_frame"/> <!-- laser frame-->
+    <param name="tf_wait_duration" value="10"/>
+     
+    <param name="save_calibration" value="false"/> <!-- TODO save calibration -->
+    <param name="save_path" value="$(find argo_tracker_description)/calibrations/$(optenv ARGO_ROBOT_TYPE atex_robot)_spinning_vertical_lidar_calibration.urdf.xacro"/>
+    
+    <remap from="request_scans" to="/vertical_lidar/request_scans" />
+    <remap from="reset_clouds" to="/vertical_lidar/reset_clouds" />
+  </node>
+</launch>

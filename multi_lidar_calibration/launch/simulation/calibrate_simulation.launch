@@ -1,39 +1,16 @@
 <?xml version="1.0"?>
-<launch> 
-
-   <!-- Laser to pointcloud -->
-  <node pkg="vigir_laserscan_to_pointcloud" type="laserscan_to_pointcloud_node" name="front_scan_to_clouds_pub_node" output="screen" ns="front_lidar">
-    <remap from="scan" to="/front_spinning_lidar/scan"/>
-    <remap from="scan_cloud" to="/front_lidar/scan_cloud"/>
-    <param name="use_high_fidelity_projection" value="true"/>
-    <param name="target_frame" value="front_spinning_lidar_root_link"/>
-  </node>
-  
-  <node pkg="vigir_laserscan_to_pointcloud" type="laserscan_to_pointcloud_node" name="rear_scan_to_clouds_pub_node" output="screen" ns="rear_lidar">
-    <remap from="scan" to="/rear_spinning_lidar/scan"/>
-    <remap from="scan_cloud" to="/rear_lidar/scan_cloud"/>
-    <param name="use_high_fidelity_projection" value="true"/>
-    <param name="target_frame" value="rear_spinning_lidar_root_link"/>
-  </node>
-  
+<launch>  
   <!-- Accumulated pointcloud -->
- <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="front_cloud_aggregator_node" output="screen" ns="front_lidar">
+  <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="front_cloud_aggregator_node" output="screen" ns="/johnny5/sensor/head_lidar">
     <remap from="cloud" to="scan_cloud"/>
-    <remap from="cloud_out" to="cloud_agg"/> 
-    <param name="target_frame" value="base_link"/>
+<!--    <remap from="cloud_out" to="cloud_agg"/> -->
+    <param name="target_frame" value="head_lidar_actuator_frame"/>
     <param name="publish_frequency_hz" value="0.05"/>
-  </node>   
-  
-  <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="rear_cloud_aggregator_node" output="screen" ns="rear_lidar">
-    <remap from="cloud" to="scan_cloud"/>
-    <remap from="cloud_out" to="cloud_agg"/> 
-    <param name="target_frame" value="base_link"/>
-    <param name="publish_frequency_hz" value="0.05"/>
-  </node>   
+  </node>
   
   <!-- Start calibration -->
   <node pkg="multi_lidar_calibration" type="multi_lidar_calibration_node" name="multi_lidar_calibration_node" output="screen">
-    <param name="base_frame" value="base_link"/>
+    <param name="base_frame" value="head_lidar_actuator_frame"/>
     <param name="max_sqr_dist" value="0.1" />
     <param name="neighbor_mapping_vis_count" value="100" />
     <param name="normals_radius" value="0.07" />
