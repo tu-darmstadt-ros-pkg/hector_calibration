@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <launch> 
- <node pkg="lidar_calibration" type="cloud_aggregator_node" name="cloud_aggregator_node" output="screen" ns="head_lidar">
+ <node pkg="lidar_calibration" type="cloud_aggregator_node" name="cloud_aggregator_node" output="screen" ns="/johnny5/sensor/head_lidar/">
     <remap from="cloud" to="scan_cloud"/>
     <!-- <remap from="/cloud_out" to="/head_lidar/half_scans"/> -->
     <param name="target_frame" value="head_lidar_actuator_frame"/>
