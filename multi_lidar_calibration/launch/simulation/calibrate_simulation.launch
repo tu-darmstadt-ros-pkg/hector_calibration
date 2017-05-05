@@ -16,7 +16,7 @@
     <param name="normals_radius" value="0.07" />
     <param name="crop_dist" value="1.0" />
     <param name="voxel_leaf_size" value="0.01" />
-    <param name="parameter_diff_thres" value="0.001" />
+    <param name="parameter_diff_thres" value="0.00001" />
     <param name="max_iterations" value="10" />
     
     <param name="target_frame" value="rear_spinning_lidar_root_link" /> <!-- should match cloud2 -->

@@ -18,6 +18,8 @@
   <!-- Start calibration -->
   <node pkg="multi_lidar_calibration" type="multi_lidar_calibration_node" name="multi_lidar_calibration_node" output="screen">
     <param name="base_frame" value="head_link"/>
+    <param name="max_sqr_dist" value="0.01" />
+    <param name="parameter_diff_thres" value="0.000001" />
 
     <remap from="cloud1" to="/johnny5/sensor/head_lidar/cloud_agg" />
     <remap from="cloud2" to="/johnny5/sensor/head_cam/depth/cloud_agg" />

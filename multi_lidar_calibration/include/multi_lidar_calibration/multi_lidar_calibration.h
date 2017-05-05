@@ -39,9 +39,9 @@ private:
                 const pcl::PointCloud<pcl::PointXYZ>& cloud2,
                 const std::vector<WeightedNormal>& normals,
                 const std::map<unsigned int, unsigned int>& mapping,
-                const Eigen::Affine3d initial_calibration);
+                const Eigen::Affine3d &initial_calibration);
   bool maxIterationsReached(unsigned int current_iterations) const;
-  bool checkConvergence(const Eigen::Affine3d& calibration) const;
+  bool checkConvergence(const Eigen::Affine3d& prev_calibration, const Eigen::Affine3d& current_calibration) const;
   bool saveToDisk(std::string path, const Eigen::Affine3d& calibration) const;
 
   Eigen::Affine3d getTransform(std::string frame_base, std::string frame_target) const;
