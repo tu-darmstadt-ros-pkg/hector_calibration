@@ -39,7 +39,7 @@ namespace lidar_calibration {
   bool isValidCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud);
   template<typename T> pcl::PointCloud<T> removeInvalidPoints(pcl::PointCloud<T>& cloud);
   template <class Iter, class Incr> void safe_advance(Iter& curr, const Iter& end, Incr n);
-  void fixNanInf(WeightedNormal& normal);
+  void nanInfToZero(WeightedNormal& normal);
 
   void publishCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud, const ros::Publisher& pub, std::string frame);
   void publishCloud(sensor_msgs::PointCloud2& cloud, const ros::Publisher& pub, std::string frame);

@@ -38,7 +38,7 @@ pcl::PointCloud<T> removeInvalidPoints(pcl::PointCloud<T>& cloud) {
 }
 
 template <class Iter, class Incr>
-void safe_advance(Iter& curr, const Iter& end, Incr n)
+void safeAdvance(Iter& curr, const Iter& end, Incr n)
 {
   size_t remaining(std::distance(curr, end));
   if (remaining < n)
@@ -48,7 +48,7 @@ void safe_advance(Iter& curr, const Iter& end, Incr n)
   std::advance(curr, n);
 }
 
-void fixNanInf(WeightedNormal& normal) {
+void nanInfToZero(WeightedNormal& normal) {
   if (std::isnan(normal.normal.x()) || std::isnan(normal.normal.y()) || std::isnan(normal.normal.z())
       || std::isinf(normal.normal.x()) || std::isinf(normal.normal.y()) || std::isinf(normal.normal.z())) {
     normal.normal = Eigen::Vector3d::Zero();
@@ -107,7 +107,7 @@ void publishNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
   unsigned int id_cnt = 0;
   for (std::map<unsigned int, unsigned int>::const_iterator it = mapping.begin();
        it != mapping.end();
-       safe_advance<std::map<unsigned int, unsigned int>::const_iterator, unsigned int>(it, mapping.end(), step))
+       safeAdvance<std::map<unsigned int, unsigned int>::const_iterator, unsigned int>(it, mapping.end(), step))
   {
     visualization_msgs::Marker marker;
     marker.header.frame_id = frame;
@@ -181,7 +181,7 @@ std::vector<WeightedNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ>&
     WeightedNormal normal;
     normal.normal = Eigen::Vector3d(plane_parameters[0], plane_parameters[1], plane_parameters[2]);
     normal.weight = weight;
-    fixNanInf(normal);
+    nanInfToZero(normal);
     normals[i] = normal;
   }
 
