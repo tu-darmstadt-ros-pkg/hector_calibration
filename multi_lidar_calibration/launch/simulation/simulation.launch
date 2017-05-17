@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 
 <launch>
-  <include file="$(find lidar_calibration)/launch/simulation/start_head_simulation.launch">
-      <arg name="world" value="$(find lidar_calibration)/worlds/calibration_test.world"/>
+  <include file="$(find multi_lidar_calibration)/launch/simulation/start_head_simulation.launch">
+      <arg name="world" value="$(find lidar_calibration)/worlds/calibration_small.world"/>
    </include>
    
   <node pkg="vigir_laserscan_to_pointcloud" type="laserscan_to_pointcloud_node" name="scan_to_clouds_pub_node" output="screen">

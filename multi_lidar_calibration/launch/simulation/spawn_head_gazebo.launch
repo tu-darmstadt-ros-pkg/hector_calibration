@@ -5,18 +5,18 @@
   <arg name="robot_name" default="johnny5" />
   
   <!-- send the correct robot XML to param server -->
-  <param name="robot_description" command="$(find xacro)/xacro.py '$(find hector_multisensor_head_driver)/urdf/hector_multisensor_head_standalone.urdf.xacro' 
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find multi_lidar_calibration)/urdf/hector_multisensor_head_standalone_no_cylinder.urdf.xacro' 
          robot_name:=johnny5" />
   
   <!-- load modified URDF for gazebo -->   
   <!-- fixme -->
-  <param name="robot_description_gazebo" command="cat $(find lidar_calibration)/urdf/hector_multisensor_head_with_error_new.urdf" />
+  <param name="robot_description_gazebo" command="cat $(find multi_lidar_calibration)/urdf/realsense_error.urdf" />
   
   <!-- push robot_description to factory and spawn robot in gazebo -->
   <node name="spawn_robot" pkg="gazebo_ros" type="spawn_model"
-    args="-param robot_description
+    args="-param robot_description_gazebo
           -urdf
-          -model robot_description"
+          -model robot_description_gazebo"
     respawn="false" output="screen" />
 
   <!-- start robot state publisher -->

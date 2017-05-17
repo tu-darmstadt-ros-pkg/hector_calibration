@@ -3,6 +3,13 @@
 namespace hector_calibration {
 namespace lidar_calibration {
 
+double normalizeAngle(double angle) {
+    double new_angle = angle;
+    while (new_angle < M_PI) new_angle += M_PI*2;
+    while (new_angle >= M_PI) new_angle -= M_PI*2;
+    return new_angle;
+}
+
 template<typename T>
 bool isValidPoint(const T& point) {
   for (unsigned int i = 0; i < 3; i++) {

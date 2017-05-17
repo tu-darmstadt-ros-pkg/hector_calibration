@@ -11,6 +11,6 @@
     <arg name="physics" value="ode" />
   </include>
 
-    <include file="$(find lidar_calibration)/launch/simulation/spawn_head_gazebo.launch"/>
+    <include file="$(find multi_lidar_calibration)/launch/simulation/spawn_head_gazebo.launch"/>
     <include file="$(find hector_multisensor_head_driver)/launch/load_simulated_controller.launch"/>
 </launch>

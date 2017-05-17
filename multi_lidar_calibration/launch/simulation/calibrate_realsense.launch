@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<launch>  
+  <!-- Accumulated pointcloud -->
+  <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="lidar_aggregator_node" output="screen" ns="/johnny5/sensor/head_lidar">
+    <remap from="cloud" to="scan_cloud"/>
+    <remap from="cloud_out" to="cloud_agg"/>
+    <param name="target_frame" value="head_link"/>
+    <param name="publish_frequency_hz" value="0.05"/>
+  </node>
+  
+  <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="depth_aggregator_node" output="screen" ns="/johnny5/sensor/head_cam/depth">
+    <remap from="cloud" to="points"/>
+    <remap from="cloud_out" to="cloud_agg"/>
+    <param name="target_frame" value="head_link"/>
+    <param name="publish_frequency_hz" value="10"/>
+  </node>
+  
+  <!-- Start calibration -->
+  <node pkg="multi_lidar_calibration" type="multi_lidar_calibration_node" name="multi_lidar_calibration_node" output="screen">
+    <param name="base_frame" value="head_link"/>
+
+    <remap from="cloud1" to="/johnny5/sensor/head_lidar/cloud_agg" />
+    <remap from="cloud2" to="/johnny5/sensor/head_cam/depth/cloud_agg" />
+  </node>
+</launch>

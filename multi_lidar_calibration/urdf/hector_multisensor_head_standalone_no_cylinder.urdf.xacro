@@ -1,0 +1,50 @@
+<?xml version="1.0" ?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="hector_multisensor_head">
+  <!--<xacro:include filename="$(find thor_mang_description)/urdf/helper_macros.urdf.xacro.xml" />-->
+  <xacro:include filename="$(find hector_components_description)/urdf/hector_multisensor_head.urdf.xacro" /> 
+
+  <link name="world"/>
+
+  <joint name="fixed1" type="fixed">
+    <parent link="world"/>
+    <child link="base"/>
+    <origin xyz="0.0 0.0 0.1" rpy="0 0 0"/>
+  </joint>
+
+  <link name="base" >
+    <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+<!--    <visual>
+      <geometry>
+        <cylinder length="1" radius="0.045"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="1" radius="0.045"/>
+      </geometry>
+    </collision>-->
+  </link>
+
+  <joint name="fixed2" type="fixed">
+    <parent link="base"/>
+    <child link="head_link"/>
+    <origin xyz="0.0 0.0 0.1" rpy="0 0 0"/>
+  </joint>
+
+  <hector_multisensor_head_macro parent="base"  name="head" scaling="0.001">
+    <origin xyz="0.0 0.0 0" rpy="${M_PI*0.5} 0 ${M_PI*0.5}"/> 
+    <!-- Calibrated origin -->
+    <origin xyz="0 0 0" rpy="0 0 0"/> 
+  </hector_multisensor_head_macro>
+  
+  <gazebo>
+    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+      <robotNamespace>/gazebo/$(arg robot_name)/joints</robotNamespace>
+      <robotParam>/robot_description</robotParam>
+      <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+    </plugin>
+  </gazebo>
+    
+</robot>
+
