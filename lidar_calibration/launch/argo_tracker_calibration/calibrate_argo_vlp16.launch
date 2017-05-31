@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+ 
+ <launch>
+    <include file="$(find argo_tracker_bringup)/launch/vlp16_driver.launch">
+      <arg name="transform_frame_id" value="vlp16_laser_frame" />
+    </include>
+  
+  <!-- Laser Frame -->
+  <node pkg="tf" type="static_transform_publisher" name="vlp16_laser_frame_pub" args="0 0 0 0 -1.57 0 spin_lidar_lidar_mount_link vlp16_laser_frame 100" />
+  
+  <!-- Actuator Frame -->
+  <node pkg="tf" type="static_transform_publisher" name="vlp16_actuator_frame_pub" args="0 0 0 0 -1.57 0 spin_lidar_lidar_mount_link_fixed vlp16_actuator_frame 100" />
+  
+  <!-- Aggregator -->
+   <node pkg="lidar_calibration" type="cloud_aggregator_node" name="cloud_aggregator_node" output="screen" ns="vlp16">
+    <remap from="cloud" to="/spin_laser/vlp16"/>
+    <param name="target_frame" value="vlp16_actuator_frame"/>
+    <param name="rotations" value="1" />
+  </node> 
+  
+  <!-- Calibration -->
+  <node pkg="lidar_calibration" type="lidar_calibration_node" name="lidar_calibration_node" output="screen" ns="vlp16_calibration" args="--m">
+    <param name="actuator_frame" value="vlp16_actuator_frame"/>
+    <param name="rotation_offset_pitch" value="-1.57"/>
+    
+    <!-- these have to be part of URDF (not just tf) -->
+    <param name="o_spin_frame" value="spin_lidar_lidar_mount_link"/> <!-- spinning frame -->
+    <param name="o_laser_frame" value="spin_lidar_pitch_hokuyo_laser_frame"/> <!-- laser frame-->
+    <param name="tf_wait_duration" value="10"/>
+     
+    <param name="save_calibration" value="true"/> 
+    <param name="save_path" value="$(find argo_tracker_description)/calibrations/$(optenv ARGO_ROBOT_TYPE atex_robot)_vlp16_calibration.urdf.xacro"/>
+    
+    <remap from="request_scans" to="/vlp16/request_scans" />
+    <remap from="reset_clouds" to="/vlp16/reset_clouds" />
+  </node>
+</launch>
