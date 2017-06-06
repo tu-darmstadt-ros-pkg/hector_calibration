@@ -79,6 +79,10 @@ MultiLidarCalibration::calibrate(pcl::PointCloud<pcl::PointXYZ> cloud1,
   Eigen::Affine3d prev_calibration = Eigen::Affine3d::Identity();
   pcl::PointCloud<pcl::PointXYZ> cloud2_transformed = cloud2;
 
+  // publish initial clouds
+  publishCloud(cloud1, result_pub_[0], base_frame_);
+  publishCloud(cloud2_transformed, result_pub_[1], base_frame_);
+
   unsigned int iteration_counter = 0;
   double max_distance = max_sqr_dist_;
   do {
@@ -272,6 +276,17 @@ bool MultiLidarCalibration::saveToDisk(std::string path, const Eigen::Affine3d& 
 
   ROS_INFO_STREAM("New Calibration:");
   printCalibration(new_transform);
+
+  // diff
+  Eigen::Vector3d old_ypr = old_transform_.linear().eulerAngles(2, 1, 0);
+  Eigen::Vector3d old_xyz = old_transform_.translation();
+
+  Eigen::Vector3d new_ypr = new_transform.linear().eulerAngles(2, 1, 0);
+  Eigen::Vector3d new_xyz = new_transform.translation();
+  Eigen::Vector3d diff_xyz = new_xyz - old_xyz;
+  Eigen::Vector3d diff_ypr = new_ypr - old_ypr;
+  ROS_INFO_STREAM("Difference:");
+  printCalibration(diff_xyz(0), diff_xyz(1), diff_xyz(2), diff_ypr(2), diff_ypr(1), diff_ypr(0));
 
   boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
 
