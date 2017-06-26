@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+ 
+ <launch>
+  <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="laserscan_to_big_aggregated_cloud" output="screen" respawn="true">
+    <remap from="cloud" to="/spin_laser/vlp16" />
+    <remap from="cloud_out" to="/scan_cloud_aggregated_big" />    
+    <param name="publish_frequency_hz" value="0.05" />
+    <param name="target_frame" value="odom" />
+    <param name="publish_frame" value="spin_lidar_lidar_mount_link_fixed" />
+    <param name="actuated_joint_name" value="spin_lidar_spin_joint" />
+    <param name="actuated_joint_min_velocity" value="0.3" />
+  </node>
+   
+  <node pkg="lidar_extrinsic_calibration" type="lidar_ground_calibration_node" name="lidar_ground_calibration_node" output="screen" ns="lidar_extrinsic_calibration">
+    <param name="ground_frame" value="base_link"/>
+    <param name="tf_wait_duration" value="10"/>
+    
+    <remap from="cloud" to="/scan_cloud_aggregated_big" />
+  </node>
+</launch>
