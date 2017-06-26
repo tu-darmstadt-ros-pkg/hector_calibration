@@ -6,7 +6,7 @@ LidarExtrinsicCalibration::LidarExtrinsicCalibration(ros::NodeHandle &nh) :
 nh_(nh),
 first_cloud_(true) {
   cloud_sub_ = nh_.subscribe("cloud", 1000, &LidarExtrinsicCalibration::pointCloudCb, this);
-  result_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("result", 1000);
+  //result_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("result", 1000);
   ground_plane_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("ground_plane", 1000);
 
   ros::NodeHandle pnh("~");
