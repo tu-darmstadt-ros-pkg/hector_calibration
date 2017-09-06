@@ -147,8 +147,6 @@ add_executable(lidar_calibration_node src/lidar_calibration_node.cpp)
 add_dependencies(lidar_calibration_node ${catkin_EXPORTED_TARGETS})
 add_executable(cloud_aggregator_node src/cloud_aggregator_node.cpp)
 add_dependencies(cloud_aggregator_node ${catkin_EXPORTED_TARGETS})
-add_executable(test_node src/test_node.cpp)
-add_dependencies(cloud_aggregator_node ${catkin_EXPORTED_TARGETS})
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -163,9 +161,6 @@ target_link_libraries(lidar_calibration_node
   ${PROJECT_NAME}
 )
 target_link_libraries(cloud_aggregator_node
-  ${PROJECT_NAME}
-)
-target_link_libraries(test_node
   ${PROJECT_NAME}
 )
 
