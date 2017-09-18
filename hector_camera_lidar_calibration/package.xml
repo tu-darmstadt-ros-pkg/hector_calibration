@@ -45,11 +45,19 @@
   <build_depend>roscpp</build_depend>
   <build_depend>rosbag</build_depend>
   <build_depend>ceres-solver</build_depend>
+  <build_depend>pcl_ros</build_depend>
+  <build_depend>tf2_ros</build_depend>
+  <build_depend>tf2_eigen</build_depend>
+  <build_depend>eigen_conversions</build_depend>
   <run_depend>camera_model_loader</run_depend>
   <run_depend>hector_calibration_msgs</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>rosbag</run_depend>
   <run_depend>ceres-solver</run_depend>
+  <run_depend>pcl_ros</run_depend>
+  <run_depend>tf2_ros</run_depend>
+  <run_depend>tf2_eigen</run_depend>
+  <run_depend>eigen_conversions</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

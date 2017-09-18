@@ -12,6 +12,10 @@ find_package(catkin REQUIRED COMPONENTS
   hector_calibration_msgs
   roscpp
   rosbag
+  pcl_ros
+  tf2_ros
+  tf2_eigen
+  eigen_conversions
 )
 
 ## System dependencies are found with CMake's conventions
@@ -51,7 +55,7 @@ find_package(Ceres REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES hector_camera_lidar_calibration
-  CATKIN_DEPENDS camera_model_loader hector_calibration_msgs roscpp rosbag
+#  CATKIN_DEPENDS camera_model_loader hector_calibration_msgs roscpp rosbag
 #  DEPENDS system_lib
 )
 
@@ -68,6 +72,7 @@ set(HEADERS
 set(SOURCES
   src/data_collector.cpp
   src/optimizer.cpp
+  src/mutual_information_error.cpp
 )
 
 ## Specify additional locations of header files

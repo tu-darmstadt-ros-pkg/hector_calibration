@@ -28,7 +28,11 @@ hector_calibration_msgs::CameraLidarCalibrationData DataCollector::captureData()
   // add images
   for (std::map<std::string, camera_model::Camera>::iterator c = camera_model_loader_.getCameraMap().begin(); c != camera_model_loader_.getCameraMap().end(); ++c) {
     camera_model::Camera& cam = c->second;
-    data.images.push_back(*cam.getLastImage());
+    hector_calibration_msgs::CameraObservation cam_obs;
+    cam_obs.name.data = cam.getName();
+    cam_obs.image = *cam.getLastImage();
+    // TODO cam_obs.transform
+    data.camera_observations.push_back(cam_obs);
   }
   // Save to bag
   rosbag::Bag bag;
