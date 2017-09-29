@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>   
+  <!-- Start calibration -->
+  <node pkg="hector_camera_lidar_calibration" type="camera_lidar_calibration_node" name="camera_lidar_calibration_node" output="screen">
+    <rosparam file="$(find hector_camera_lidar_calibration)/config/cameras.yaml" command="load" />
+    <param name="capture_data" value="false"/>
+    <param name="bag_path" value="$(find hector_camera_lidar_calibration)/calibration_bags/test_bag.bag"/>
+    
+    <param name="bin_fraction" value="1"/>
+    
+  </node>
+</launch>

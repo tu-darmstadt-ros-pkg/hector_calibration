@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<launch> 
+  
+  <!-- Accumulated pointcloud -->
+ <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="lidar_aggregator_node" output="screen">
+    <remap from="cloud" to="/spin_laser/vlp16"/>
+    <remap from="cloud_out" to="/spin_laser/vlp16_agg"/> 
+    <param name="target_frame" value="base_link"/>
+    <param name="publish_frequency_hz" value="0.1"/>
+  </node>   
+  
+  <!-- Start calibration -->
+  <node pkg="hector_camera_lidar_calibration" type="camera_lidar_calibration_node" name="camera_lidar_calibration_node" output="screen">
+    <rosparam file="$(find color_cloud_from_image_proc)/config/cameras.yaml" command="load" />
+    <param name="base_frame" value="base_link"/>
+    <param name="cam_head_frame" value="ricoh_theta_center_link"/>
+    <param name="bin_fraction" value="1"/>
+    
+    <remap from="cloud" to="/spin_laser/vlp16_agg"/>
+  </node>
+</launch>
