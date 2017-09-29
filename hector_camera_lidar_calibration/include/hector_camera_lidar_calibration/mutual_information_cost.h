@@ -10,6 +10,7 @@
 #include <pcl/filters/filter.h>
 
 #include <cv_bridge/cv_bridge.h>
+#include <opencv2/highgui.hpp>
 
 #include <geometry_msgs/TransformStamped.h>
 #include <Eigen/Eigen>
@@ -23,6 +24,7 @@ namespace camera_lidar_calibration {
 struct CameraObservation {
   std::string name; // cam name
   cv_bridge::CvImagePtr image;
+  cv_bridge::CvImagePtr mask;
   Eigen::Affine3d transform; // transform from camera head to this camera
 };
 
@@ -89,7 +91,7 @@ public:
   static ceres::CostFunction* Create(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData>& calibration_data,
                                      const camera_model::CameraModelLoader& camera_model, int bin_fraction) {
     ceres::CostFunction* cost_function =
-        new ceres::NumericDiffCostFunction<NumericDiffMutualInformationCost, ceres::CENTRAL, 1, 6>(
+        new ceres::NumericDiffCostFunction<NumericDiffMutualInformationCost, ceres::FORWARD, 1, 6>(
           new NumericDiffMutualInformationCost(calibration_data, camera_model, bin_fraction));
 
     return cost_function;
@@ -97,7 +99,6 @@ public:
 
 private:
   void readData(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData> &calibration_data);
-  void normalizeIntensity(pcl::PointCloud<pcl::PointXYZI>& cloud) const;
   Histogram computeHistogram(const Eigen::Affine3d& cam_transform) const;
   Probability computeProbability(const Histogram& histogram) const;
   float computeMutualInformationCost(const Probability& prob) const;

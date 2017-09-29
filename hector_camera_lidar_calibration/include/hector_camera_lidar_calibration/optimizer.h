@@ -2,6 +2,7 @@
 #define OPTIMIZER_H
 
 #include <ros/ros.h>
+#include <rosbag/view.h>
 
 #include <hector_camera_lidar_calibration/data_collector.h>
 #include <hector_camera_lidar_calibration/mutual_information_cost.h>

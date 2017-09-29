@@ -3,6 +3,8 @@
 
 #include <ros/ros.h>
 #include <rosbag/bag.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <boost/filesystem.hpp>
 
 #include <camera_model_loader/camera_model_loader.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -31,7 +33,8 @@ private:
 
   // Parameters
   std::string base_frame_;
-  std::string cam_head_frame;
+  std::string cam_head_frame_;
+  std::string mask_path_;
 
 };
 

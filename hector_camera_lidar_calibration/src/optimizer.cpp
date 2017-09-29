@@ -12,7 +12,21 @@ Optimizer::Optimizer() {
 }
 
 void Optimizer::runFromBag(std::string file_path) {
+  rosbag::Bag bag;
+  try {
+    bag.open(file_path, rosbag::bagmode::Read);
+  } catch (rosbag::BagException& e) {
+    ROS_ERROR_STREAM("Cannot open " << file_path << ". " << e.what());
+    return ;
+  }
+  rosbag::View data_view(bag, rosbag::TopicQuery("calibration_data"));
 
+  std::vector<hector_calibration_msgs::CameraLidarCalibrationData> calibration_data;
+  BOOST_FOREACH(rosbag::MessageInstance const m, data_view) {
+    hector_calibration_msgs::CameraLidarCalibrationData::ConstPtr msg = m.instantiate<hector_calibration_msgs::CameraLidarCalibrationData>();
+    calibration_data.push_back(*msg);
+  }
+  run(calibration_data);
 }
 
 void Optimizer::run(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData>& data) {
