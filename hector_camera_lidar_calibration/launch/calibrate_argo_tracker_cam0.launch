@@ -11,13 +11,17 @@
   
   <!-- Start calibration -->
   <node pkg="hector_camera_lidar_calibration" type="camera_lidar_calibration_node" name="camera_lidar_calibration_node" output="screen">
+    <!-- Capturing -->
     <rosparam file="$(find hector_camera_lidar_calibration)/config/cameras.yaml" command="load" />
     <param name="capture_data" value="true"/>
     <param name="base_frame" value="structure_addons_link"/>
     <param name="cam_head_frame" value="ricoh_theta_right_optical_frame"/>
-    <param name="bin_fraction" value="1"/>
     <param name="mask_path" value="$(find hector_camera_lidar_calibration)/masks"/>
     
     <remap from="cloud" to="/spin_laser/vlp16_agg"/>
+    
+    <!-- Calibration -->
+    <param name="bin_fraction" value="1"/>
+
   </node>
 </launch>

@@ -1,69 +1,5 @@
 #include <hector_camera_lidar_calibration/mutual_information_cost.h>
 
-bool hasNanInf(const cv::Mat& mat) {
-  for (int row = 0; row < mat.rows; row++) {
-    for (int col = 0; col < mat.cols; col++) {
-      float v = mat.at<float>(row, col);
-      if (std::isnan(v) || std::isinf(v)) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-cv::Mat drawHistogram(const cv::Mat& hist) {
-  int image_height = 256;
-  int image_width = 256;
-  int bin_width = cvRound( (double) image_width/hist.cols);
-  cv::Mat hist_image(image_height, image_width, CV_8UC3, cv::Scalar(255,255,255));
-
-  double min, max;
-  cv::minMaxLoc(hist, &min, &max, NULL, NULL);
-//  ROS_INFO_STREAM("Histogram max: " << max);
-  double scaling = image_height / max;
-
-  for( int i = 1; i < hist.cols; i++ ) {
-    cv::line(hist_image, cv::Point(bin_width * (i-1), cvRound(image_height - scaling * hist.at<float>(i-1))),
-                         cv::Point(bin_width * i, cvRound(image_height - scaling * hist.at<float>(i))),
-                         cv::Scalar(0, 0, 0), 2, 8, 0);
-  }
-  return hist_image;
-}
-
-
-cv::Mat drawProbability(const cv::Mat& hist) {
-  int image_height = 256;
-  int image_width = 256;
-  int bin_width = cvRound( (double) image_width/hist.cols);
-  cv::Mat prob_image(image_height, image_width, CV_8UC3, cv::Scalar(255,255,255));
-  double max = 1.0;
-  double scaling = image_height / max;
-
-  for( int i = 1; i < hist.cols; i++ ) {
-    cv::line(prob_image, cv::Point(bin_width * (i-1), cvRound(image_height - scaling * hist.at<float>(i-1))),
-                         cv::Point(bin_width * i, cvRound(image_height - scaling * hist.at<float>(i))),
-                         cv::Scalar(0, 0, 0), 2, 8, 0);
-  }
-  return prob_image;
-}
-
-void normalizeIntensity(pcl::PointCloud<pcl::PointXYZI>& cloud) {
-  float max = 0;
-  for (auto point_it = cloud.begin(); point_it != cloud.end(); ++point_it) {
-    const pcl::PointXYZI& point = *point_it;
-    if (point.intensity > max) {
-      max = point.intensity;
-    }
-  }
-
-  float scaling = 255.0f / max;
-  for (auto point_it = cloud.begin(); point_it != cloud.end(); ++point_it) {
-    pcl::PointXYZI& point = *point_it;
-    point.intensity *= scaling;
-  }
-}
-
 namespace hector_calibration {
 namespace camera_lidar_calibration {
 
@@ -102,14 +38,21 @@ bool MutualInformationCost::Evaluate(const double* parameters, double* cost, dou
 NumericDiffMutualInformationCost::NumericDiffMutualInformationCost(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData> &calibration_data,
                                                const camera_model::CameraModelLoader& camera_model, int bin_fraction)
   : camera_model_(camera_model), bin_fraction_(bin_fraction) {
+  ros::NodeHandle pnh("~");
+  processed_cloud_pub_ = pnh.advertise<pcl::PointCloud<pcl::PointXYZI>>("processed_cloud", 10, true);
+
   readData(calibration_data);
   bin_count_ = 256 / bin_fraction;
 }
 
 
 void NumericDiffMutualInformationCost::readData(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData> &calibration_data) {
+  // Iterate over scan-images pairs
   for (std::vector<hector_calibration_msgs::CameraLidarCalibrationData>::const_iterator data_it = calibration_data.begin(); data_it != calibration_data.end(); ++data_it) {
     const hector_calibration_msgs::CameraLidarCalibrationData& data = *data_it;
+    int obs_number = data_it - calibration_data.begin();
+
+    std::vector<ros::Publisher> result_pubs;
 
     Observation observation;
     // Read scan
@@ -117,39 +60,51 @@ void NumericDiffMutualInformationCost::readData(const std::vector<hector_calibra
     ROS_INFO_STREAM("Reading scan of size " << observation.scan.size());
     std::vector<int> mapping;
     pcl::removeNaNFromPointCloud(observation.scan, observation.scan, mapping);
-    normalizeIntensity(observation.scan);
+    observation.scan = cutReflectance(observation.scan, 0.0f, 100.0f);
+    normalizeReflectance(observation.scan, false, 100.0f); // max normal reflectance of vlp16 is 100
+
+    // Publish processed cloud
+//    sensor_msgs::PointCloud2 cloud_msg;
+//    pcl::toROSMsg(observation.scan, cloud_msg);
+    processed_cloud_pub_.publish(observation.scan);
 
     // Read images
+    ros::NodeHandle pnh("~");
     for (std::vector<hector_calibration_msgs::CameraObservation>::const_iterator cam_obs_it = data.camera_observations.begin();
          cam_obs_it != data.camera_observations.end(); ++cam_obs_it) {
       const hector_calibration_msgs::CameraObservation& cam_obs_msg = *cam_obs_it;
       CameraObservation cam_obs;
       cam_obs.name = cam_obs_msg.name.data;
-      cam_obs.image = cv_bridge::toCvCopy(cam_obs_msg.image);
-      cam_obs.mask = cv_bridge::toCvCopy(cam_obs_msg.mask);
+
+      cam_obs.cv_image_ptr = cv_bridge::toCvCopy(cam_obs_msg.image);
+      cv::cvtColor(cam_obs.cv_image_ptr->image, cam_obs.cv_image_ptr->image, cv::COLOR_RGB2GRAY);
+      cam_obs.cv_image_color_ptr = cv_bridge::toCvCopy(cam_obs_msg.image);
+      cam_obs.cv_image_ptr->encoding = sensor_msgs::image_encodings::TYPE_8UC1;
+//      cv::imwrite("gray_image.jpg", cam_obs.cv_image_ptr->image);
+
+      cam_obs.cv_mask_ptr = cv_bridge::toCvCopy(cam_obs_msg.mask);
+//      cv::imwrite("mask.jpg", cam_obs.cv_mask_ptr->image);
+
       tf::transformMsgToEigen(cam_obs_msg.transform.transform, cam_obs.transform);
       observation.cam_observations.push_back(cam_obs);
       ROS_INFO_STREAM("Reading image of cam " << cam_obs.name);
+      ros::Publisher result_image_pub = pnh.advertise<sensor_msgs::Image>("result_image_obs_" + std::to_string(obs_number) + "_" + cam_obs.name, 10, true);
+      result_pubs.push_back(result_image_pub);
     }
-
+    result_image_pubs_.push_back(result_pubs);
     observations_.push_back(observation);
   }
   ROS_INFO_STREAM("Data reading finished.");
 }
 
 bool NumericDiffMutualInformationCost::operator()(const double* const parameters, double* cost) const {
+  ROS_INFO_STREAM("Evaluation with parameters: " << parametersToString(parameters));
   Eigen::Affine3d calibration(Eigen::AngleAxisd(parameters[5], Eigen::Vector3d::UnitZ())
       * Eigen::AngleAxisd(parameters[4], Eigen::Vector3d::UnitY())
       * Eigen::AngleAxisd(parameters[3], Eigen::Vector3d::UnitX()));
   calibration.translation() = Eigen::Vector3d(parameters[0], parameters[1], parameters[2]);
-  Histogram hist = computeHistogram(calibration);
-//  ROS_INFO_STREAM("joint hist has nan/inf? " << hasNanInf(hist.joint_hist));
-//  ROS_INFO_STREAM("reflectance hist has nan/inf? " << hasNanInf(hist.reflectance_hist));
-  Probability prob = computeProbability(hist);
-//  ROS_INFO_STREAM("reflectance prob has nan/inf? " << hasNanInf(prob.reflectance_prob));
-//  ROS_INFO_STREAM("joint prob has nan/inf? " << hasNanInf(prob.joint_prob));
 
-  cost[0] = computeMutualInformationCost(prob);
+  cost[0] = computeMutualInformationCost(calibration);
   return true;
 }
 
@@ -158,6 +113,17 @@ Histogram NumericDiffMutualInformationCost::computeHistogram(const Eigen::Affine
   // Iterate over each observation (scan - images pair)
   for (std::vector<Observation>::const_iterator obs_it = observations_.begin(); obs_it != observations_.end(); ++obs_it) {
     const Observation& observation = *obs_it;
+    int obs_number = obs_it - observations_.begin();
+    // Create debug images
+    std::vector<cv_bridge::CvImage> result_images;
+    for (std::vector<CameraObservation>::const_iterator cam_it = observation.cam_observations.begin(); cam_it != observation.cam_observations.end(); ++cam_it) {
+      const CameraObservation& cam_obs = *cam_it;
+      cv_bridge::CvImage result_image;
+      result_image.encoding = cam_obs.cv_image_color_ptr->encoding;
+      cam_obs.cv_image_color_ptr->image.copyTo(result_image.image);
+      result_images.push_back(result_image);
+    }
+
     // Iterate over each point in scan
     for (pcl::PointCloud<pcl::PointXYZI>::const_iterator scan_it = observation.scan.begin(); scan_it != observation.scan.end(); ++scan_it) {
       const pcl::PointXYZI& point = *scan_it;
@@ -168,17 +134,18 @@ Histogram NumericDiffMutualInformationCost::computeHistogram(const Eigen::Affine
       // Iterate over each cam
       for (std::vector<CameraObservation>::const_iterator cam_it = observation.cam_observations.begin(); cam_it != observation.cam_observations.end(); ++cam_it) {
         const CameraObservation& cam_obs = *cam_it;
+        int cam_number = cam_it - observation.cam_observations.begin();
+
         // Transform to specific cam frame
         Eigen::Vector3d point_cam;
         pcl::transformPoint(point_transformed, point_cam, cam_obs.transform);
         // Project to image
         Eigen::Vector2d pixel;
         if (camera_model_.getCamera(cam_obs.name).worldToPixel(point_cam, pixel)) {
-          Eigen::Vector2i pixel_rounded(std::round(pixel(0)), std::round(pixel(1))); //TODO interpolate instead?
           // check image mask
-          const cv::Mat& mask = cam_obs.mask->image;
-          if (mask.empty() || mask.at<uchar>(pixel_rounded(1), pixel_rounded(0)) > 0) {
-            uchar intensity = cam_obs.image->image.at<uchar>(pixel_rounded(1), pixel_rounded(0)) / bin_fraction_;
+          const cv::Mat& mask = cam_obs.cv_mask_ptr->image;
+          if (mask.empty() || interpolate(mask, pixel) > 0) {
+            uchar intensity = interpolate(cam_obs.cv_image_ptr->image, pixel) / bin_fraction_;
             uchar reflectance = static_cast<uchar>(point.intensity / bin_fraction_);
 
             histogram.intensity_hist.at<float>(intensity) += 1;
@@ -189,27 +156,48 @@ Histogram NumericDiffMutualInformationCost::computeHistogram(const Eigen::Affine
             histogram.reflectance_sum += reflectance;
 
             histogram.count++;
+
+            // Debug/Result image
+            if (point_cam.norm() < 3) {
+              cv::Point p(cvRound(pixel(0)), cvRound(pixel(1)));
+  //              cv::Scalar color(reflectance, reflectance, reflectance);
+  //              cv::circle(result_images[cam_number].image, p, 1, color, 1); // TODO set pixel instead
+              result_images[cam_number].image.at<cv::Vec3b>(p) = cv::Vec3b(reflectance, reflectance, reflectance);
+            }
           }
         }
       }
     }
+
+    // Write out for debug
+
+    auto t = std::time(nullptr);
+    auto tm = *std::localtime(&t);
+
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
+    std::string time_str = oss.str();
+
+    for (unsigned int cam_number = 0; cam_number < result_images.size(); cam_number++) {
+      result_image_pubs_[obs_number][cam_number].publish(result_images[cam_number].toImageMsg());
+      cv::imwrite("result_image_obs_" + std::to_string(obs_number) + "_" + observation.cam_observations[cam_number].name + "_" + time_str + ".jpg", result_images[cam_number].image);
+    }
+
   }
 
-//  cv::Mat intensity_hist_image = drawHistogram(histogram.intensity_hist);
-//  cv::namedWindow("Intensity Histogram", CV_WINDOW_AUTOSIZE);
-//  cv::imshow("Intensity Histogram", intensity_hist_image);
+//  cv::Mat intensity_hist_image = drawHistogram(histogram.intensity_hist, true);
+//  cv::imwrite("Intensity_Histogram.jpg", intensity_hist_image);
 
-//  cv::Mat reflectance_hist_image = drawHistogram(histogram.reflectance_hist);
-//  cv::namedWindow("Reflectance Histogram", CV_WINDOW_AUTOSIZE);
-//  cv::imshow("Reflectance Histogram", reflectance_hist_image);
-
-//  cv::waitKey(0);
+//  cv::Mat reflectance_hist_image = drawHistogram(histogram.reflectance_hist, true);
+//  cv::imwrite("Reflectance_Histogram.jpg", reflectance_hist_image);
   return histogram;
 }
 
 Probability NumericDiffMutualInformationCost::computeProbability(const Histogram& histogram) const {
   float mu_intensity = histogram.intensity_sum / histogram.count;
+//  ROS_INFO_STREAM("mu intensity: " << mu_intensity);
   float mu_reflectance = histogram.reflectance_sum / histogram.count;
+//  ROS_INFO_STREAM("mu reflectance: " << mu_reflectance);
   //Covariances
   double sigma_intensity = 0;
   double sigma_reflectance = 0;
@@ -218,8 +206,8 @@ Probability NumericDiffMutualInformationCost::computeProbability(const Histogram
 
   for (int i = 0; i < bin_count_; i++) {
     //calculate sample covariance
-    sigma_intensity += histogram.intensity_hist.at<float>(i)*(i - mu_intensity)*(i - mu_intensity);
-    sigma_reflectance += histogram.reflectance_hist.at<float>(i)*(i - mu_reflectance)*(i - mu_reflectance);
+    sigma_intensity += histogram.intensity_hist.at<float>(i) * std::pow(i - mu_intensity, 2);
+    sigma_reflectance += histogram.reflectance_hist.at<float>(i) * std::pow(i - mu_reflectance, 2);
 
     //Normalize the histogram so that the value is between (0,1)
     prob.intensity_prob.at<float>(i) = histogram.intensity_hist.at<float>(i)/histogram.count;
@@ -229,8 +217,8 @@ Probability NumericDiffMutualInformationCost::computeProbability(const Histogram
     }
   }
 
-  sigma_intensity = sigma_intensity / histogram.count;
-  sigma_reflectance = sigma_reflectance / histogram.count;
+  sigma_intensity /= histogram.count;
+  sigma_reflectance /= histogram.count;
 
   //Compute the optimal bandwidth (Silverman's rule of thumb)
   sigma_intensity = 1.06 * std::sqrt(sigma_intensity) / std::pow(histogram.count, 0.2);
@@ -242,51 +230,61 @@ Probability NumericDiffMutualInformationCost::computeProbability(const Histogram
 
   prob.count = histogram.count;
 
-//  cv::Mat intensity_prob_image = drawProbability(prob.intensity_prob);
-//  cv::namedWindow("Intensity PD", CV_WINDOW_AUTOSIZE);
-//  cv::imshow("Intensity PD", intensity_prob_image);
+//  cv::Mat intensity_prob_image = drawHistogram(prob.intensity_prob);
+//  cv::imwrite("Intensity_PD.jpg", intensity_prob_image);
 
-//  cv::Mat reflectance_prob_image = drawProbability(prob.reflectance_prob);
-//  cv::namedWindow("Reflectance PD", CV_WINDOW_AUTOSIZE);
-//  cv::imshow("Reflectance PD", reflectance_prob_image);
+//  cv::Mat reflectance_prob_image = drawHistogram(prob.reflectance_prob);
+//  cv::imwrite("Reflectance_PD.jpg", reflectance_prob_image);
 
-//  cv::waitKey(0);
   return prob;
 }
 
-float NumericDiffMutualInformationCost::computeMutualInformationCost(const Probability& prob) const {
+float NumericDiffMutualInformationCost::computeMutualInformationCost(const Eigen::Affine3d &cam_transform) const {
+  Histogram hist = computeHistogram(cam_transform);
+//  ROS_INFO_STREAM("joint hist has nan/inf? " << hasNanInf(hist.joint_hist));
+//  ROS_INFO_STREAM("reflectance hist has nan/inf? " << hasNanInf(hist.reflectance_hist));
+  Probability prob = computeProbability(hist);
+//  ROS_INFO_STREAM("reflectance prob has nan/inf? " << hasNanInf(prob.reflectance_prob));
+//  ROS_INFO_STREAM("joint prob has nan/inf? " << hasNanInf(prob.joint_prob));
   //Calculate log of density estimate
   cv::Mat joint_log, intensity_log, reflectance_log;
 
-  cv::Mat joint_prob_no_zero;
+  // Create copy of probability estimates without 0
+  cv::Mat intensity_prob_no_zero, reflectance_prob_no_zero, joint_prob_no_zero;
+  prob.intensity_prob.copyTo(intensity_prob_no_zero);
+  intensity_prob_no_zero.setTo(1e-7, prob.intensity_prob == 0);
+  prob.reflectance_prob.copyTo(reflectance_prob_no_zero);
+  reflectance_prob_no_zero.setTo(1e-7, prob.reflectance_prob == 0);
   prob.joint_prob.copyTo(joint_prob_no_zero);
   joint_prob_no_zero.setTo(1e-7, prob.joint_prob == 0);
 
-  cv::log(prob.intensity_prob, intensity_log);
-  cv::log(prob.reflectance_prob, reflectance_log);
-//  ROS_INFO_STREAM("reflectance log prob has nan/inf? " << hasNanInf(reflectance_log));
+  // Compute log probabilities
+  cv::log(intensity_prob_no_zero, intensity_log);
+  cv::log(reflectance_prob_no_zero, reflectance_log);
   cv::log(joint_prob_no_zero, joint_log);
+  //  ROS_INFO_STREAM("reflectance log prob has nan/inf? " << hasNanInf(reflectance_log));
 //  ROS_INFO_STREAM("log joint prob has nan/inf? " << hasNanInf(joint_log));
 
 
-  cv::Mat joint_entropy, intensity_entropy, reflectance_entropy;
+  // Compute entropy
+  cv::Mat intensity_entropy, reflectance_entropy, joint_entropy;
   cv::multiply(prob.intensity_prob, intensity_log, intensity_entropy);
   cv::multiply(prob.reflectance_prob, reflectance_log, reflectance_entropy);
-//  ROS_INFO_STREAM("reflectance entropy has nan/inf? " << hasNanInf(reflectance_entropy));
   cv::multiply(prob.joint_prob, joint_log, joint_entropy);
+//  ROS_INFO_STREAM("reflectance entropy has nan/inf? " << hasNanInf(reflectance_entropy));
 //  ROS_INFO_STREAM("log entropy has nan/inf? " << hasNanInf(joint_entropy));
 
 
   //Sum all the elements
   float Hx  = cv::norm(intensity_entropy, cv::NORM_L1);
-//  ROS_INFO_STREAM("Hx: " << Hx);
   float Hy  = cv::norm(reflectance_entropy, cv::NORM_L1);
-//  ROS_INFO_STREAM("Hy: " << Hy);
   float Hxy = cv::norm(joint_entropy, cv::NORM_L1);
-//  ROS_INFO_STREAM("Hxy: " << Hxy);
-
   float mi = Hx + Hy - Hxy;
-  ROS_INFO_STREAM("MI: " << mi);
+
+  //  ROS_INFO_STREAM("Hx: " << Hx);
+  //  ROS_INFO_STREAM("Hy: " << Hy);
+  //  ROS_INFO_STREAM("Hxy: " << Hxy);
+  ROS_INFO_STREAM(std::setprecision(17) << "MI: " << mi);
   return -mi;
 }
 

@@ -4,7 +4,7 @@
 #include <hector_camera_lidar_calibration/optimizer.h>
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "camera_lidar_calibration_node");
+  ros::init(argc, argv, "camera_lidar_calibration_vis_node");
 
   ros::NodeHandle pnh("~");
 
@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
     opt.loadFromBag(bag_path);
   }
 
-  opt.run();
+  opt.visualizeCost();
 
   return 0;
 }
