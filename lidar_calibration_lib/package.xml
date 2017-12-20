@@ -12,7 +12,6 @@
   <author email="ros@martinoehler.de">Martin Oehler</author>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <depend>ceres-solver</depend>
   <depend>hector_calibration_msgs</depend>
   <depend>pcl_conversions</depend>
   <depend>pcl_ros</depend>

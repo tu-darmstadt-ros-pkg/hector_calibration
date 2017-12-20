@@ -25,8 +25,6 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-find_package(Ceres REQUIRED)
-
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -59,7 +57,6 @@ set(SOURCES
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ${CERES_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -79,7 +76,6 @@ add_dependencies(${PROJECT_NAME}
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
-  ${CERES_LIBRARIES}
 )
 
 #############

@@ -14,7 +14,7 @@ add_compile_options(-std=c++11)
 #SET(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Ceres REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -48,6 +48,7 @@ set(SOURCES
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${CERES_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -74,6 +75,7 @@ add_dependencies(cloud_aggregator_node ${catkin_EXPORTED_TARGETS})
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
+  ${CERES_LIBRARIES}
 )
 target_link_libraries(lidar_calibration_node
   ${PROJECT_NAME}
