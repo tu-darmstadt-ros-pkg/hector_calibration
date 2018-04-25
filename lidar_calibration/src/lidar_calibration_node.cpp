@@ -31,10 +31,12 @@ int main(int argc, char** argv) {
     calibration.setManualMode(true);
   }
 
-  calibration.setPeriodicPublishing(true, 5);
+//  calibration.setPeriodicPublishing(true, 5);
   calibration.loadOptionsFromParamServer();
 
   calibration.calibrate();
+
+  ros::spin();
 
   return 0;
 }

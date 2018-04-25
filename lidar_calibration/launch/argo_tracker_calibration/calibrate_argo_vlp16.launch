@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
  
  <launch>
-    <include file="$(find argo_tracker_bringup)/launch/vlp16_driver.launch">
-      <arg name="transform_frame_id" value="vlp16_laser_frame" />
-    </include>
+  <include file="$(find argo_tracker_bringup)/launch/laser_drivers/laser_drivers_vlp16_proc.launch">
+    <arg name="transform_frame_id" value="vlp16_laser_frame" />
+  </include>
   
   <!-- Laser Frame -->
   <node pkg="tf" type="static_transform_publisher" name="vlp16_laser_frame_pub" args="0 0 0 0 -1.57 0 spin_lidar_lidar_mount_link vlp16_laser_frame 100" />
