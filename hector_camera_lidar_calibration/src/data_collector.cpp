@@ -73,7 +73,7 @@ hector_calibration_msgs::CameraLidarCalibrationData DataCollector::captureData()
 
   // Save to bag
   rosbag::Bag bag;
-  std::string filename = "/tmp/lidar_calibration_data.bag";
+  std::string filename = "/tmp/camera_lidar_calibration_data.bag";
   bag.open(filename, rosbag::bagmode::Write);
   ros::Time time(ros::Time::now());
   bag.write("calibration_data", time, data);
