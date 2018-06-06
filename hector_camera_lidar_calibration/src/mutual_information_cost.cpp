@@ -180,7 +180,9 @@ Histogram NumericDiffMutualInformationCost::computeHistogram(const Eigen::Affine
 
     for (unsigned int cam_number = 0; cam_number < result_images.size(); cam_number++) {
       result_image_pubs_[obs_number][cam_number].publish(result_images[cam_number].toImageMsg());
-      cv::imwrite("result_image_obs_" + std::to_string(obs_number) + "_" + observation.cam_observations[cam_number].name + "_" + time_str + ".jpg", result_images[cam_number].image);
+      std::string filepath = "result_image_obs_" + std::to_string(obs_number) + "_" + observation.cam_observations[cam_number].name + "_" + time_str + ".jpg";
+//      ROS_INFO_STREAM("Writing debug image to " << filepath);
+      cv::imwrite(filepath, result_images[cam_number].image);
     }
 
   }

@@ -86,13 +86,14 @@ void Optimizer::visualizeCost() {
   MutualInformationCost* mi_cost = new MutualInformationCost(data_, camera_model_loader_, bin_fraction_);
 
   double step = 0.02;
-  for (unsigned int i = 0; i < 5; i++) {
+  for (unsigned int i = 0; i < 1; i++) {
     double cost;
     mi_cost->Evaluate(parameters, &cost, NULL);
     parameters[3] -= step;
     //ROS_INFO_STREAM("Cost: " << cost);
   }
 
+  ros::spin();
 
   delete mi_cost;
 }
