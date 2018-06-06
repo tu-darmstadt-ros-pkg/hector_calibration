@@ -11,8 +11,8 @@ namespace lidar_calibration {
 
     scan_sub_ = nh_.subscribe("cloud", 10, &CalibrationCloudAggregator::cloudCallback, this);
     reset_sub_ = nh_.subscribe("reset_clouds", 10, &CalibrationCloudAggregator::resetCallback, this);
-    point_cloud1_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("half_scan_1",10,false);
-    point_cloud2_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("half_scan_2",10,false);
+    point_cloud1_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("half_scan_1", 10, true);
+    point_cloud2_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("half_scan_2", 10, true);
 
     reset_clouds_srv_ = nh_.advertiseService("reset_clouds", &CalibrationCloudAggregator::resetSrvCallback, this);
 

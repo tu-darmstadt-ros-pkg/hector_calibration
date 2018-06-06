@@ -30,6 +30,7 @@
 #define POINT_PLANE_ERROR_H
 
 #include <ceres/ceres.h>
+
 #include <pcl/point_types.h>
 
 namespace hector_calibration {

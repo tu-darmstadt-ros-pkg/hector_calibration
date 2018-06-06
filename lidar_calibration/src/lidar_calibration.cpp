@@ -59,11 +59,11 @@ LidarCalibration::LidarCalibration(const ros::NodeHandle& nh) :
   save_path_(""),
   rotation_offset_(Eigen::Affine3d::Identity())
 {
-  cloud1_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("result_cloud1", 1000);
-  cloud2_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("result_cloud2", 1000);
-  ground_plane_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("ground_plane", 1000);
-  neighbor_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("neighbor_mapping", 1000);
-  planarity_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("planarity", 1000);
+  cloud1_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("result_cloud1", 10, true);
+  cloud2_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("result_cloud2", 10, true);
+  ground_plane_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("ground_plane", 10, true);
+  neighbor_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("neighbor_mapping", 10, true);
+  planarity_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("planarity", 10, true);
 
   request_scans_client_ = nh_.serviceClient<hector_calibration_msgs::RequestScans>("request_scans");
   reset_clouds_client_ = nh_.serviceClient<std_srvs::Empty>("reset_clouds");
