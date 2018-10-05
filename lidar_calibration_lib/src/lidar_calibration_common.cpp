@@ -195,35 +195,35 @@ std::vector<WeightedNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ>&
   return normals;
 }
 
-void visualizeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud,
-                     std::vector<WeightedNormal>& normals)
-{
-  pcl::PointCloud<pcl::Normal> pcl_normals;
-  pcl_normals.resize(cloud.size());
-  for (unsigned int i = 0; i < normals.size(); i++) {
-    pcl::Normal pcl_normal(normals[i].normal(0), normals[i].normal(1), normals[i].normal(2));
-    pcl_normals[i] = pcl_normal;
-  }
-  pcl::visualization::PCLVisualizer viewer;
-  viewer.setBackgroundColor(0,0,0);
+//void visualizeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud,
+//                     std::vector<WeightedNormal>& normals)
+//{
+//  pcl::PointCloud<pcl::Normal> pcl_normals;
+//  pcl_normals.resize(cloud.size());
+//  for (unsigned int i = 0; i < normals.size(); i++) {
+//    pcl::Normal pcl_normal(normals[i].normal(0), normals[i].normal(1), normals[i].normal(2));
+//    pcl_normals[i] = pcl_normal;
+//  }
+//  pcl::visualization::PCLVisualizer viewer;
+//  viewer.setBackgroundColor(0,0,0);
 
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>());
-  pcl::copyPointCloud(cloud, *cloud_ptr);
-  viewer.addPointCloud<pcl::PointXYZ>(cloud_ptr, "Cloud");
+//  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>());
+//  pcl::copyPointCloud(cloud, *cloud_ptr);
+//  viewer.addPointCloud<pcl::PointXYZ>(cloud_ptr, "Cloud");
 
-  pcl::PointCloud<pcl::Normal>::Ptr normals_ptr(new pcl::PointCloud<pcl::Normal>());
-  pcl::copyPointCloud(pcl_normals, *normals_ptr);
-  viewer.addPointCloudNormals<pcl::PointXYZ, pcl::Normal>(cloud_ptr, normals_ptr, 10, 0.05, "Normals");
-  viewer.addCoordinateSystem(1.0);
-  viewer.initCameraParameters();
-  ros::Rate rate(10);
-  while (!viewer.wasStopped())
-   {
-     viewer.spinOnce (100);
-     ros::spinOnce();
-     rate.sleep();
-   }
-}
+//  pcl::PointCloud<pcl::Normal>::Ptr normals_ptr(new pcl::PointCloud<pcl::Normal>());
+//  pcl::copyPointCloud(pcl_normals, *normals_ptr);
+//  viewer.addPointCloudNormals<pcl::PointXYZ, pcl::Normal>(cloud_ptr, normals_ptr, 10, 0.05, "Normals");
+//  viewer.addCoordinateSystem(1.0);
+//  viewer.initCameraParameters();
+//  ros::Rate rate(10);
+//  while (!viewer.wasStopped())
+//   {
+//     viewer.spinOnce (100);
+//     ros::spinOnce();
+//     rate.sleep();
+//   }
+//}
 
 void visualizePlanarity(const pcl::PointCloud<pcl::PointXYZ> &cloud,
                         const std::vector<WeightedNormal> &normals,

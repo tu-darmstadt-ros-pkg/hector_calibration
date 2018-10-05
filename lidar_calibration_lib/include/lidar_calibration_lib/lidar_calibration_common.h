@@ -10,7 +10,7 @@
 #include <pcl/features/normal_3d.h>
 
 // pcl vis
-#include <pcl/visualization/pcl_visualizer.h>
+//#include <pcl/visualization/pcl_visualizer.h>
 
 // ros
 #include <ros/ros.h>
@@ -53,7 +53,7 @@ namespace lidar_calibration {
                          const std::map<unsigned int, unsigned int>& mapping, ros::Publisher &pub, std::string frame, unsigned int number_of_markers = 100);
 
   std::vector<WeightedNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud, double radius = 0.07);
-  void visualizeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud, std::vector<WeightedNormal> &normals);
+//  void visualizeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud, std::vector<WeightedNormal> &normals);
   void visualizePlanarity(const pcl::PointCloud<pcl::PointXYZ> &cloud, const std::vector<WeightedNormal> &normals, ros::Publisher &pub, std::string frame);
 
 }
