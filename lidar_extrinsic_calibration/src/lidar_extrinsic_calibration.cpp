@@ -82,11 +82,11 @@ void LidarExtrinsicCalibration::calibrateGround() {
   // Calculate angle from ground plane to ground frame around x-axis
   float nx = coefficients.values[0]; float ny = coefficients.values[1]; float nz = coefficients.values[2];
 
-  float roll = static_cast<float>(M_PI)/2 - std::acos(ny/std::sqrt(std::pow(ny, 2) + std::pow(nz, 2)));
-  float pitch = static_cast<float>(M_PI)/2 - std::acos(nx/std::sqrt(std::pow(nx, 2) + std::pow(nz, 2)));
+  double roll = M_PI/2 - std::acos(ny/std::sqrt(std::pow(ny, 2) + std::pow(nz, 2)));
+  double pitch = M_PI/2 - std::acos(nx/std::sqrt(std::pow(nx, 2) + std::pow(nz, 2)));
 
-  Eigen::Vector3f offset(roll, -pitch, 0);
-  Eigen::Vector3f rotated_offset = plane_transform.rotation().inverse() * offset;
+  Eigen::Vector3d offset(roll, -pitch, 0);
+  Eigen::Vector3d rotated_offset = plane_transform.rotation().inverse() * offset;
 
   ROS_INFO_STREAM("Detected ground plane: " << offset);
   ROS_INFO_STREAM("Rotated: " << rotated_offset);
