@@ -22,6 +22,7 @@ namespace hector_calibration {
     void publishLastResult();
   private:
     void pointCloudCb(const sensor_msgs::PointCloud2ConstPtr& cloud_ptr);
+    Eigen::Affine3d getTransform(std::string frame_base, std::string frame_target, const ros::Time& time) const;
     Eigen::Affine3d getTransform(std::string frame_base, std::string frame_target) const;
 
     tf::TransformListener tfl_;
