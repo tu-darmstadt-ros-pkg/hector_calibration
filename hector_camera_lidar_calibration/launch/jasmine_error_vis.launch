@@ -1,13 +1,17 @@
 <?xml version="1.0"?>
 <launch> 
+  <arg name="camera_name" default="camera360" />
+  <arg name="calibration_name" default="insta360"/>
   
   <!-- Visualize error -->
-  <node pkg="hector_camera_lidar_calibration" type="error_vis_node" name="error_vis_node" output="screen">
-    <rosparam file="$(find jasmine_robot_bringup)/config/ricoh_theta/cameras.yaml" command="load" />
+  <node pkg="hector_camera_lidar_calibration" type="error_vis_node" name="error_vis_node" output="screen" launch-prefix="">
+    <rosparam file="$(find jasmine_robot_bringup)/config/$(arg calibration_name)/cameras.yaml" command="load" subst_value="True"/>
+    <param name="mask_path" value="$(find jasmine_robot_bringup)/config/$(arg calibration_name)/"/>
     
     <param name="base_frame" value="base_link"/>
-    <param name="cam_head_frame" value="ricoh_theta_center_link"/>
+    <param name="cam_head_frame" value="$(arg camera_name)_center_link"/>
     <param name="bin_fraction" value="1"/>
+    <param name="scan_sample_size" value="1000000"/>
     <param name="bag_path" value="/tmp/camera_lidar_calibration_data.bag"/>
     <param name="capture_data" value="false"/>
     

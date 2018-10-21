@@ -20,6 +20,7 @@ std::string parametersToString(const double * parameters);
 
 cv::Mat drawHistogram(const cv::Mat& hist, bool autoscale = true, float max = 0.0);
 bool containsNanOrInf(const cv::Mat& mat);
+pcl::PointCloud<pcl::PointXYZI> sampleCloud(const pcl::PointCloud<pcl::PointXYZI>& cloud, unsigned int samples);
 uchar interpolate(const cv::Mat& img, cv::Point2f pt);
 uchar interpolate(const cv::Mat& img, Eigen::Vector2d pt);
 

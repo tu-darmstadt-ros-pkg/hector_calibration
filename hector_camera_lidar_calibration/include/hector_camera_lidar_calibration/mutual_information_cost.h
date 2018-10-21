@@ -80,7 +80,7 @@ struct Probability {
 class MutualInformationCost : public ceres::FirstOrderFunction {
 public:
   MutualInformationCost(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData>& calibration_data,
-                         const camera_model::CameraModelLoader& camera_model, int bin_fraction);
+                         const camera_model::CameraModelLoader& camera_model, int bin_fraction, int scan_sample_size);
   ~MutualInformationCost();
 
   virtual bool Evaluate(const double* parameters, double* cost, double* gradient) const;
@@ -93,15 +93,15 @@ private:
 class NumericDiffMutualInformationCost {
 public:
   NumericDiffMutualInformationCost(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData>& calibration_data,
-                                   const camera_model::CameraModelLoader& camera_model, int bin_fraction);
+                                   const camera_model::CameraModelLoader& camera_model, int bin_fraction, int scan_sample_size);
 
   bool operator()(const double* const parameters, double* cost) const;
 
   static ceres::CostFunction* Create(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData>& calibration_data,
-                                     const camera_model::CameraModelLoader& camera_model, int bin_fraction) {
+                                     const camera_model::CameraModelLoader& camera_model, int bin_fraction, int scan_sample_size) {
     ceres::CostFunction* cost_function =
         new ceres::NumericDiffCostFunction<NumericDiffMutualInformationCost, ceres::FORWARD, 1, 6>(
-          new NumericDiffMutualInformationCost(calibration_data, camera_model, bin_fraction));
+          new NumericDiffMutualInformationCost(calibration_data, camera_model, bin_fraction, scan_sample_size));
 
     return cost_function;
   }
@@ -118,6 +118,7 @@ private:
   const camera_model::CameraModelLoader& camera_model_;
   int bin_count_;
   int bin_fraction_;
+  int scan_sample_size_;
 
   // Debug publishers
   std::vector<std::vector<ros::Publisher>> result_image_pubs_;

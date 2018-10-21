@@ -41,10 +41,9 @@ hector_calibration_msgs::CameraLidarCalibrationData DataCollector::captureData()
     ROS_WARN_STREAM("Frame id of scan (" << data.scan.header.frame_id << ") doesn't match the base frame (" << base_frame_ << ").");
   }
 
-
-  // add images
-  for (std::map<std::string, camera_model::Camera>::iterator c = camera_model_loader_.getCameraMap().begin(); c != camera_model_loader_.getCameraMap().end(); ++c) {
-    camera_model::Camera& cam = c->second;
+  // Add images
+  for (std::map<std::string, camera_model::Camera>::const_iterator c = camera_model_loader_.getCameraMap().begin(); c != camera_model_loader_.getCameraMap().end(); ++c) {
+    const camera_model::Camera& cam = c->second;
     hector_calibration_msgs::CameraObservation cam_obs;
     cam_obs.name.data = cam.getName();
     cam_obs.image = *cam.getLastImage();
@@ -84,8 +83,8 @@ hector_calibration_msgs::CameraLidarCalibrationData DataCollector::captureData()
 }
 
 bool DataCollector::receivedImages() {
-  for (std::map<std::string, camera_model::Camera>::iterator c = camera_model_loader_.getCameraMap().begin(); c != camera_model_loader_.getCameraMap().end(); ++c) {
-    camera_model::Camera& cam = c->second;
+  for (std::map<std::string, camera_model::Camera>::const_iterator c = camera_model_loader_.getCameraMap().begin(); c != camera_model_loader_.getCameraMap().end(); ++c) {
+    const camera_model::Camera& cam = c->second;
     if(!cam.getLastImage()) {
       return false;
     }

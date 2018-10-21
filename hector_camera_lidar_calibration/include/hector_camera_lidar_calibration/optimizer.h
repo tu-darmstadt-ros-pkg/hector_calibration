@@ -24,6 +24,7 @@ private:
 
   // Parameters
   int bin_fraction_;
+  int scan_sample_size_;
   std::vector<hector_calibration_msgs::CameraLidarCalibrationData> data_;
 };
 

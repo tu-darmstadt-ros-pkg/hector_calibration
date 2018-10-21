@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 <launch> 
+    <arg name="camera_name" default="camera360" />
+  <arg name="calibration_name" default="insta360"/>
   
   <!-- MAKE SURE TO SWITCH TO INTENSITY BRANCH TO KEEP INTENSITIES IN ACCUMULATED CLOUD -->
   <!-- Accumulated pointcloud -->
@@ -7,17 +9,17 @@
     <remap from="cloud" to="/spin_laser/vlp16"/>
     <remap from="cloud_out" to="/spin_laser/vlp16_agg"/> 
     <param name="target_frame" value="base_link"/>
-    <param name="publish_frequency_hz" value="0.05"/>
+    <param name="publish_frequency_hz" value="0.2"/>
   </node>   
   
   <!-- Capture data -->
   <node pkg="hector_camera_lidar_calibration" type="data_collector_node" name="camera_lidar_calibration_data_collector_node" output="screen">
-    <rosparam file="$(find jasmine_robot_bringup)/config/ricoh_theta/cameras.yaml" command="load" />
+    <rosparam file="$(find jasmine_robot_bringup)/config/$(arg calibration_name)/cameras.yaml" command="load" subst_value="True"/>
+    <param name="mask_path" value="$(find jasmine_robot_bringup)/config/$(arg calibration_name)/"/>
     
     <param name="base_frame" value="base_link"/>
-    <param name="cam_head_frame" value="ricoh_theta_center_link"/>
+    <param name="cam_head_frame" value="$(arg camera_name)_center_link"/>
     <param name="bin_fraction" value="1"/>
-    <param name="mask_path" value="$(find hector_camera_lidar_calibration)/masks"/>
     
     <remap from="cloud" to="/spin_laser/vlp16_agg"/>
   </node>

@@ -1,5 +1,7 @@
 #include <hector_camera_lidar_calibration/helper.h>
 
+#include <pcl/filters/random_sample.h>
+
 namespace hector_calibration {
 namespace camera_lidar_calibration {
 
@@ -26,14 +28,12 @@ bool containsNanOrInf(const cv::Mat& mat) {
 uchar interpolate(const cv::Mat& img, cv::Point2f pt) {
     cv::Mat patch;
     cv::getRectSubPix(img, cv::Size(1,1), pt, patch);
-    return patch.at<float>(0,0);
+    return static_cast<uchar>(patch.at<float>(0,0));
 }
 
 uchar interpolate(const cv::Mat& img, Eigen::Vector2d pt) {
-    cv::Mat patch;
     cv::Point2f cv_pt(pt(0), pt(1)); // precision loss, but should be ok
-    cv::getRectSubPix(img, cv::Size(1,1), cv_pt, patch);
-    return patch.at<uchar>(0,0);
+    return interpolate(img, cv_pt);
 }
 
 cv::Mat drawHistogram(const cv::Mat& hist, bool autoscale, float max) {
@@ -101,6 +101,20 @@ void normalizeReflectance(pcl::PointCloud<pcl::PointXYZI>& cloud, bool autoscale
       point.intensity *= scaling;
     }
   }
+}
+
+pcl::PointCloud<pcl::PointXYZI> sampleCloud(const pcl::PointCloud<pcl::PointXYZI>& cloud, unsigned int samples)
+{
+  pcl::RandomSample<pcl::PointXYZI> random_sample;
+  random_sample.setSample(samples);
+
+  pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZI>());
+  pcl::copyPointCloud(cloud, *cloud_ptr);
+  random_sample.setInputCloud(cloud_ptr);
+
+  pcl::PointCloud<pcl::PointXYZI> cloud_out;
+  random_sample.filter(cloud_out);
+  return cloud_out;
 }
 
 }

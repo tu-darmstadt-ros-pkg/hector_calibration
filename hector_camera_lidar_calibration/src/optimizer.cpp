@@ -9,6 +9,7 @@ Optimizer::Optimizer() {
 
   ros::NodeHandle pnh("~");
   pnh.param("bin_fraction", bin_fraction_, 1);
+  pnh.param("scan_sample_size", scan_sample_size_, 300000);
 }
 
 void Optimizer::loadFromBag(std::string file_path) {
@@ -56,7 +57,7 @@ void Optimizer::run() {
   ROS_INFO_STREAM("Initial calibration: " << parametersToString(parameters));
 
   // Solve problem with ceres
-  ceres::GradientProblem problem(new MutualInformationCost(data_, camera_model_loader_, bin_fraction_));
+  ceres::GradientProblem problem(new MutualInformationCost(data_, camera_model_loader_, bin_fraction_, scan_sample_size_));
 
   ceres::GradientProblemSolver::Options options;
   options.minimizer_progress_to_stdout = true;
@@ -83,15 +84,38 @@ void Optimizer::visualizeCost() {
     parameters[i+3] = ypr(2-i);
   }
 
-  MutualInformationCost* mi_cost = new MutualInformationCost(data_, camera_model_loader_, bin_fraction_);
+  MutualInformationCost* mi_cost = new MutualInformationCost(data_, camera_model_loader_, bin_fraction_, scan_sample_size_);
 
-  double step = 0.02;
-  for (unsigned int i = 0; i < 1; i++) {
+  double previous_cost = 0;
+  while (ros::ok()) {
+    std::cout << "******************************" << std::endl;
+    int param_num;
+    std::cout << "Choose parameter number [0-5]: ";
+    std::cin >> param_num;
+    if (param_num < 0 || param_num > 5) {
+      std::cout << "Out of limits" << std::endl;
+      continue;
+    }
+    double offset;
+    std::cout << "Enter offset: ";
+    std::cin >> offset;
+
     double cost;
+    parameters[param_num] += offset;
     mi_cost->Evaluate(parameters, &cost, NULL);
-    parameters[3] -= step;
-    //ROS_INFO_STREAM("Cost: " << cost);
+    std::cout << "Cost difference: " << cost - previous_cost << std::endl;
+    previous_cost = cost;
+    std::cout << std::endl;
+    std::cout << std::endl;
   }
+
+//  double step = 0.02;
+//  for (unsigned int i = 0; i < 3; i++) {
+//    double cost;
+//    parameters[5] -= step;
+//    mi_cost->Evaluate(parameters, &cost, NULL);
+//    //ROS_INFO_STREAM("Cost: " << cost);
+//  }
 
   ros::spin();
 

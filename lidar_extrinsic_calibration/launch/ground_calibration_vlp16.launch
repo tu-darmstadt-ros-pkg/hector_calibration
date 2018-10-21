@@ -8,7 +8,7 @@
     <param name="target_frame" value="odom" />
     <param name="publish_frame" value="spin_lidar_lidar_mount_link_fixed" />
     <param name="actuated_joint_name" value="spin_lidar_spin_joint" />
-    <param name="actuated_joint_min_velocity" value="0.3" />
+    <param name="actuated_joint_min_velocity" value="-0.3" />
   </node>
    
   <node pkg="lidar_extrinsic_calibration" type="lidar_ground_calibration_node" name="lidar_ground_calibration_node" output="screen" ns="lidar_extrinsic_calibration">
