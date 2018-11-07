@@ -1,41 +1,9 @@
-#include <hector_camera_lidar_calibration/mutual_information_cost.h>
+#include <hector_camera_lidar_calibration/cost_function/mutual_information_cost.h>
 
 namespace hector_calibration {
-namespace camera_lidar_calibration {
+namespace hector_camera_lidar_calibration {
 
-MutualInformationCost::MutualInformationCost(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData>& calibration_data,
-                       const camera_model::CameraModelLoader& camera_model, int bin_fraction, int scan_sample_size) {
-  cost_function_ = NumericDiffMutualInformationCost::Create(calibration_data, camera_model, bin_fraction, scan_sample_size);
-}
-
-MutualInformationCost::~MutualInformationCost() {
-  delete cost_function_;
-}
-
-bool MutualInformationCost::Evaluate(const double* parameters, double* cost, double* gradient) const {
-  double const *const *parameters_ptr = &parameters;
-  if (gradient != NULL) {
-    double **jacobian_ptr = &gradient;
-    if (!cost_function_->Evaluate(parameters_ptr, cost, jacobian_ptr)) {
-      return false;
-    }
-    std::cout << "Current cost: " << cost[0] << std::endl;
-    std::cout << " --- gradient: ";
-    for (int i = 0; i < NumParameters(); i++) {
-      std::cout << gradient[i] << ", ";
-    }
-    std::cout << std::endl;
-  } else {
-    if (!cost_function_->Evaluate(parameters_ptr, cost, NULL)) {
-      return false;
-    }
-    std::cout << "Current cost: " << cost[0] << std::endl;
-  }
-
-  return true;
-}
-
-NumericDiffMutualInformationCost::NumericDiffMutualInformationCost(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData> &calibration_data,
+MutualInformationCost::MutualInformationCost(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData> &calibration_data,
                                                const camera_model::CameraModelLoader& camera_model, int bin_fraction, int scan_sample_size)
   : camera_model_(camera_model), bin_fraction_(bin_fraction), scan_sample_size_(scan_sample_size) {
   ros::NodeHandle pnh("~");
@@ -46,7 +14,7 @@ NumericDiffMutualInformationCost::NumericDiffMutualInformationCost(const std::ve
 }
 
 
-void NumericDiffMutualInformationCost::readData(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData> &calibration_data) {
+void MutualInformationCost::readData(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData> &calibration_data) {
   // Iterate over scan-images pairs
   for (std::vector<hector_calibration_msgs::CameraLidarCalibrationData>::const_iterator data_it = calibration_data.begin(); data_it != calibration_data.end(); ++data_it) {
     const hector_calibration_msgs::CameraLidarCalibrationData& data = *data_it;
@@ -103,18 +71,7 @@ void NumericDiffMutualInformationCost::readData(const std::vector<hector_calibra
   ROS_INFO_STREAM("Data reading finished.");
 }
 
-bool NumericDiffMutualInformationCost::operator()(const double* const parameters, double* cost) const {
-  ROS_INFO_STREAM("Evaluation with parameters: " << parametersToString(parameters));
-  Eigen::Affine3d calibration(Eigen::AngleAxisd(parameters[5], Eigen::Vector3d::UnitZ())
-      * Eigen::AngleAxisd(parameters[4], Eigen::Vector3d::UnitY())
-      * Eigen::AngleAxisd(parameters[3], Eigen::Vector3d::UnitX()));
-  calibration.translation() = Eigen::Vector3d(parameters[0], parameters[1], parameters[2]);
-
-  cost[0] = computeMutualInformationCost(calibration);
-  return true;
-}
-
-Histogram NumericDiffMutualInformationCost::computeHistogram(const Eigen::Affine3d &cam_transform) const {
+Histogram MutualInformationCost::computeHistogram(const Eigen::Affine3d &cam_transform) const {
   Histogram histogram(bin_count_);
   // Iterate over each observation (scan - images pair)
   for (unsigned int obs_number = 0; obs_number < observations_.size(); ++obs_number) {
@@ -197,7 +154,7 @@ Histogram NumericDiffMutualInformationCost::computeHistogram(const Eigen::Affine
   return histogram;
 }
 
-Probability NumericDiffMutualInformationCost::computeProbability(const Histogram& histogram) const {
+Probability MutualInformationCost::computeProbability(const Histogram& histogram) const {
   float mu_intensity = histogram.intensity_sum / histogram.count;
 //  ROS_INFO_STREAM("mu intensity: " << mu_intensity);
   float mu_reflectance = histogram.reflectance_sum / histogram.count;
@@ -243,7 +200,7 @@ Probability NumericDiffMutualInformationCost::computeProbability(const Histogram
   return prob;
 }
 
-float NumericDiffMutualInformationCost::computeMutualInformationCost(const Eigen::Affine3d &cam_transform) const {
+float MutualInformationCost::computeMutualInformationCost(const Eigen::Affine3d &cam_transform) const {
   Histogram hist = computeHistogram(cam_transform);
 //  ROS_INFO_STREAM("joint hist has nan/inf? " << hasNanInf(hist.joint_hist));
 //  ROS_INFO_STREAM("reflectance hist has nan/inf? " << hasNanInf(hist.reflectance_hist));

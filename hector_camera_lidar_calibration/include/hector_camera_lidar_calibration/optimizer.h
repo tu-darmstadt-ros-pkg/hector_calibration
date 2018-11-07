@@ -5,12 +5,12 @@
 #include <rosbag/view.h>
 
 #include <hector_camera_lidar_calibration/data_collector.h>
-#include <hector_camera_lidar_calibration/mutual_information_cost.h>
+#include <hector_camera_lidar_calibration/cost_function/first_order_mi_cost.h>
 
 #include <ceres/ceres.h>
 
 namespace hector_calibration {
-namespace camera_lidar_calibration {
+namespace hector_camera_lidar_calibration {
 
 class Optimizer {
 public:
@@ -25,7 +25,7 @@ private:
   camera_model::CameraModelLoader camera_model_loader_;
 
   double parameters_[6];
-  MutualInformationCost* mi_cost_;
+  FirstOrderMICost* mi_cost_;
 
   // Parameters
   int bin_fraction_;

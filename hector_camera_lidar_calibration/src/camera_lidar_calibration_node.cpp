@@ -9,10 +9,10 @@ int main(int argc, char** argv) {
   ros::NodeHandle pnh("~");
   bool capture_data = pnh.param("capture_data", true);
 
-  hector_calibration::camera_lidar_calibration::Optimizer opt;
+  hector_calibration::hector_camera_lidar_calibration::Optimizer opt;
 
   if (capture_data) {
-    hector_calibration::camera_lidar_calibration::DataCollector collector;
+    hector_calibration::hector_camera_lidar_calibration::DataCollector collector;
     hector_calibration_msgs::CameraLidarCalibrationData data = collector.captureData();
     std::vector<hector_calibration_msgs::CameraLidarCalibrationData> data_vec;
     data_vec.push_back(data);

@@ -1,5 +1,5 @@
-#ifndef MUTUAL_INFORMATION_COST
-#define MUTUAL_INFORMATION_COST
+#ifndef HECTOR_CAMERA_LIDAR_CALIBRATION_MUTUAL_INFORMATION_COST
+#define HECTOR_CAMERA_LIDAR_CALIBRATION_MUTUAL_INFORMATION_COST
 
 #include <iostream>
 #include <iomanip>
@@ -27,7 +27,7 @@
 #include <tf/tf.h>
 
 namespace hector_calibration {
-namespace camera_lidar_calibration {
+namespace hector_camera_lidar_calibration {
 
 struct CameraObservation {
   std::string name; // cam name
@@ -77,42 +77,15 @@ struct Probability {
   int count;
 };
 
-class MutualInformationCost : public ceres::FirstOrderFunction {
+class MutualInformationCost {
 public:
   MutualInformationCost(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData>& calibration_data,
-                         const camera_model::CameraModelLoader& camera_model, int bin_fraction, int scan_sample_size);
-  ~MutualInformationCost();
-
-  virtual bool Evaluate(const double* parameters, double* cost, double* gradient) const;
-private:
-  virtual int NumParameters() const { return 6; }
-
-  ceres::CostFunction* cost_function_;
-};
-
-class NumericDiffMutualInformationCost {
-public:
-  NumericDiffMutualInformationCost(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData>& calibration_data,
-                                   const camera_model::CameraModelLoader& camera_model, int bin_fraction, int scan_sample_size);
-
-  bool operator()(const double* const parameters, double* cost) const;
-
-  static ceres::CostFunction* Create(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData>& calibration_data,
-                                     const camera_model::CameraModelLoader& camera_model, int bin_fraction, int scan_sample_size) {
-    ceres::CostFunction* cost_function =
-        new ceres::NumericDiffCostFunction<NumericDiffMutualInformationCost, ceres::FORWARD, 1, 6>(
-          new NumericDiffMutualInformationCost(calibration_data, camera_model, bin_fraction, scan_sample_size));
-
-    return cost_function;
-  }
+                        const camera_model::CameraModelLoader& camera_model, int bin_fraction, int scan_sample_size);
   float computeMutualInformationCost(const Eigen::Affine3d& cam_transform) const;
-
 private:
   void readData(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData> &calibration_data);
   Histogram computeHistogram(const Eigen::Affine3d& cam_transform) const;
   Probability computeProbability(const Histogram& histogram) const;
-
-
 
   std::vector<Observation> observations_;
   const camera_model::CameraModelLoader& camera_model_;

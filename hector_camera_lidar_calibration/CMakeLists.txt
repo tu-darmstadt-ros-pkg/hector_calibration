@@ -66,14 +66,18 @@ catkin_package(
 set(HEADERS
   include/${PROJECT_NAME}/data_collector.h
   include/${PROJECT_NAME}/optimizer.h
-  include/${PROJECT_NAME}/mutual_information_cost.h
+  include/${PROJECT_NAME}/cost_function/mutual_information_cost.h
+  include/${PROJECT_NAME}/cost_function/first_order_mi_cost.h
+  include/${PROJECT_NAME}/cost_function/numeric_diff_mi_cost.h
   include/${PROJECT_NAME}/helper.h
 )
 
 set(SOURCES
   src/data_collector.cpp
   src/optimizer.cpp
-  src/mutual_information_cost.cpp
+  src/cost_function/mutual_information_cost.cpp
+  src/cost_function/first_order_mi_cost.cpp
+  src/cost_function/numeric_diff_mi_cost.cpp
   src/helper.cpp
 )
 

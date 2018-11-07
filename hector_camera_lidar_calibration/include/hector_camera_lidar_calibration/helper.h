@@ -14,7 +14,7 @@
 #include <iomanip>
 
 namespace hector_calibration {
-namespace camera_lidar_calibration {
+namespace hector_camera_lidar_calibration {
 
 std::string parametersToString(const double * parameters);
 

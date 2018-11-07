@@ -1,7 +1,7 @@
 #include <hector_camera_lidar_calibration/data_collector.h>
 
 namespace hector_calibration {
-namespace camera_lidar_calibration {
+namespace hector_camera_lidar_calibration {
 
 DataCollector::DataCollector()
   : captured_clouds(0), tf_listener_(tf_buffer_) {

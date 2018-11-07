@@ -13,7 +13,7 @@
 #include <tf2_ros/transform_listener.h>
 
 namespace hector_calibration {
-namespace camera_lidar_calibration {
+namespace hector_camera_lidar_calibration {
 
 class DataCollector {
 public:
