@@ -20,7 +20,12 @@ public:
   void optimize();
   void manualCalibration();
 private:
+  bool initCalibration();
+
   camera_model::CameraModelLoader camera_model_loader_;
+
+  double parameters_[6];
+  MutualInformationCost* mi_cost_;
 
   // Parameters
   int bin_fraction_;

@@ -34,29 +34,12 @@ void Optimizer::loadData(const std::vector<hector_calibration_msgs::CameraLidarC
 
 
 void Optimizer::optimize() {
-  ROS_INFO_STREAM("Starting optimization");
-  if (data_.empty()) {
-    ROS_ERROR_STREAM("Calibration data vector is empty.");
+  if (!initCalibration()) {
     return;
   }
 
-  // Load initial calibration
-  Eigen::Affine3d init_transform;
-  tf::transformMsgToEigen(data_[0].cam_transform.transform, init_transform);
-
-  Eigen::Vector3d ypr = init_transform.linear().eulerAngles(2, 1, 0);
-  Eigen::Vector3d xyz = init_transform.translation();
-
-  double parameters[6];
-  for (unsigned int i = 0; i < 3; i++) {
-    parameters[i] = xyz(i);
-    parameters[i+3] = ypr(2-i);
-  }
-
-  ROS_INFO_STREAM("Initial calibration: " << parametersToString(parameters));
-
   // Solve problem with ceres
-  ceres::GradientProblem problem(new MutualInformationCost(data_, camera_model_loader_, bin_fraction_, scan_sample_size_));
+  ceres::GradientProblem problem(mi_cost_);
 
   ceres::GradientProblemSolver::Options options;
   options.minimizer_progress_to_stdout = true;
@@ -64,26 +47,17 @@ void Optimizer::optimize() {
 //  options.line_search_direction_type = ceres::STEEPEST_DESCENT; // only 6 parameters, we don't need the approximated variant
 //  options.line_search_type = ceres::ARMIJO;
   ceres::GradientProblemSolver::Summary summary;
-  ceres::Solve(options, problem, parameters, &summary);
+  ceres::Solve(options, problem, parameters_, &summary);
 
   std::cout << summary.FullReport() << std::endl;
 
-  ROS_INFO_STREAM("Optimization result: " << parametersToString(parameters));
+  ROS_INFO_STREAM("Optimization result: " << parametersToString(parameters_));
 }
 
 void Optimizer::manualCalibration() {
-  Eigen::Affine3d init_transform;
-  tf::transformMsgToEigen(data_[0].cam_transform.transform, init_transform);
-  Eigen::Vector3d ypr = init_transform.linear().eulerAngles(2, 1, 0);
-  Eigen::Vector3d xyz = init_transform.translation();
-
-  double parameters[6];
-  for (unsigned int i = 0; i < 3; i++) {
-    parameters[i] = xyz(i);
-    parameters[i+3] = ypr(2-i);
+  if (!initCalibration()) {
+    return;
   }
-
-  MutualInformationCost* mi_cost = new MutualInformationCost(data_, camera_model_loader_, bin_fraction_, scan_sample_size_);
 
   double previous_cost = 0;
   while (ros::ok()) {
@@ -100,25 +74,42 @@ void Optimizer::manualCalibration() {
     std::cin >> offset;
 
     double cost;
-    parameters[param_num] += offset;
-    mi_cost->Evaluate(parameters, &cost, NULL);
+    parameters_[param_num] += offset;
+    mi_cost_->Evaluate(parameters_, &cost, NULL);
     std::cout << "Cost difference: " << cost - previous_cost << std::endl;
     previous_cost = cost;
     std::cout << std::endl;
     std::cout << std::endl;
   }
 
-//  double step = 0.02;
-//  for (unsigned int i = 0; i < 3; i++) {
-//    double cost;
-//    parameters[5] -= step;
-//    mi_cost->Evaluate(parameters, &cost, NULL);
-//    //ROS_INFO_STREAM("Cost: " << cost);
-//  }
-
   ros::spin();
 
-  delete mi_cost;
+  delete mi_cost_;
+}
+
+bool Optimizer::initCalibration()
+{
+  ROS_INFO_STREAM("Starting optimization");
+  if (data_.empty()) {
+    ROS_ERROR_STREAM("Calibration data vector is empty.");
+    return false;
+  }
+
+  // Load initial calibration
+  Eigen::Affine3d init_transform;
+  tf::transformMsgToEigen(data_[0].cam_transform.transform, init_transform);
+
+  Eigen::Vector3d ypr = init_transform.linear().eulerAngles(2, 1, 0);
+  Eigen::Vector3d xyz = init_transform.translation();
+
+  for (unsigned int i = 0; i < 3; i++) {
+    parameters_[i] = xyz(i);
+    parameters_[i+3] = ypr(2-i);
+  }
+  ROS_INFO_STREAM("Initial calibration: " << parametersToString(parameters_));
+
+  mi_cost_ = new MutualInformationCost(data_, camera_model_loader_, bin_fraction_, scan_sample_size_);
+  return true;
 }
 
 
