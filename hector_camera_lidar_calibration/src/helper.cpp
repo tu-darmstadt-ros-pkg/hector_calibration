@@ -1,6 +1,7 @@
 #include <hector_camera_lidar_calibration/helper.h>
 
 #include <pcl/filters/random_sample.h>
+#include <pcl/filters/crop_box.h>
 
 namespace hector_calibration {
 namespace camera_lidar_calibration {
@@ -114,6 +115,21 @@ pcl::PointCloud<pcl::PointXYZI> sampleCloud(const pcl::PointCloud<pcl::PointXYZI
 
   pcl::PointCloud<pcl::PointXYZI> cloud_out;
   random_sample.filter(cloud_out);
+  return cloud_out;
+}
+
+pcl::PointCloud<pcl::PointXYZI> cropBox(const pcl::PointCloud<pcl::PointXYZI>& cloud, const Eigen::Vector4f& min, const Eigen::Vector4f& max)
+{
+  pcl::CropBox<pcl::PointXYZI> crop_box;
+  crop_box.setMin(min);
+  crop_box.setMax(max);
+  crop_box.setNegative(true);
+  pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZI>());
+  pcl::copyPointCloud(cloud, *cloud_ptr);
+  crop_box.setInputCloud(cloud_ptr);
+
+  pcl::PointCloud<pcl::PointXYZI> cloud_out;
+  crop_box.filter(cloud_out);
   return cloud_out;
 }
 

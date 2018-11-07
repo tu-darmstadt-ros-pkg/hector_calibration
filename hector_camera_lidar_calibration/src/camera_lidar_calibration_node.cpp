@@ -7,9 +7,7 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "camera_lidar_calibration_node");
 
   ros::NodeHandle pnh("~");
-
-  bool capture_data;
-  pnh.param("capture_data", capture_data, true);
+  bool capture_data = pnh.param("capture_data", true);
 
   hector_calibration::camera_lidar_calibration::Optimizer opt;
 
@@ -29,7 +27,12 @@ int main(int argc, char** argv) {
     opt.loadFromBag(bag_path);
   }
 
-  opt.run();
+  bool manual_calibration = pnh.param("manual_calibration", false);
+  if (manual_calibration) {
+    opt.manualCalibration();
+  } else {
+    opt.optimize();
+  }
 
   return 0;
 }

@@ -58,8 +58,13 @@ void NumericDiffMutualInformationCost::readData(const std::vector<hector_calibra
     // Read scan
     pcl::fromROSMsg(data.scan, observation.scan);
     ROS_INFO_STREAM("Reading scan of size " << observation.scan.size());
+    // Filter scan
     std::vector<int> mapping;
     pcl::removeNaNFromPointCloud(observation.scan, observation.scan, mapping);
+    float size = 0.75f;
+    Eigen::Vector4f min(-size, -size, -size, 1);
+    Eigen::Vector4f max(size, size, size, 1);
+    observation.scan = cropBox(observation.scan, min, max);
     observation.scan = sampleCloud(observation.scan, static_cast<unsigned int>(scan_sample_size_));
     observation.scan = cutReflectance(observation.scan, 0.0f, 100.0f);
     normalizeReflectance(observation.scan, false, 100.0f); // max normal reflectance of vlp16 is 100

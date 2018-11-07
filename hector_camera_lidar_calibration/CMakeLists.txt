@@ -101,8 +101,6 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(data_collector_node src/data_collector_node.cpp)
 add_executable(camera_lidar_calibration_node src/camera_lidar_calibration_node.cpp)
-add_executable(error_vis_node src/error_vis_node.cpp)
-
 
 
 ## Add cmake target dependencies of the executable
@@ -114,4 +112,3 @@ add_dependencies(camera_lidar_calibration_node ${${PROJECT_NAME}_EXPORTED_TARGET
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${CERES_LIBRARIES})
 target_link_libraries(data_collector_node ${PROJECT_NAME})
 target_link_libraries(camera_lidar_calibration_node ${PROJECT_NAME})
-target_link_libraries(error_vis_node ${PROJECT_NAME})

@@ -18,12 +18,11 @@ void Optimizer::loadFromBag(std::string file_path) {
     bag.open(file_path, rosbag::bagmode::Read);
   } catch (rosbag::BagException& e) {
     ROS_ERROR_STREAM("Cannot open " << file_path << ". " << e.what());
-    return ;
+    return;
   }
   rosbag::View data_view(bag, rosbag::TopicQuery("calibration_data"));
-
   std::vector<hector_calibration_msgs::CameraLidarCalibrationData> calibration_data;
-  BOOST_FOREACH(rosbag::MessageInstance const m, data_view) {
+  for (const rosbag::MessageInstance& m: data_view) {
     hector_calibration_msgs::CameraLidarCalibrationData::ConstPtr msg = m.instantiate<hector_calibration_msgs::CameraLidarCalibrationData>();
     data_.push_back(*msg);
   }
@@ -34,7 +33,7 @@ void Optimizer::loadData(const std::vector<hector_calibration_msgs::CameraLidarC
 }
 
 
-void Optimizer::run() {
+void Optimizer::optimize() {
   ROS_INFO_STREAM("Starting optimization");
   if (data_.empty()) {
     ROS_ERROR_STREAM("Calibration data vector is empty.");
@@ -72,7 +71,7 @@ void Optimizer::run() {
   ROS_INFO_STREAM("Optimization result: " << parametersToString(parameters));
 }
 
-void Optimizer::visualizeCost() {
+void Optimizer::manualCalibration() {
   Eigen::Affine3d init_transform;
   tf::transformMsgToEigen(data_[0].cam_transform.transform, init_transform);
   Eigen::Vector3d ypr = init_transform.linear().eulerAngles(2, 1, 0);

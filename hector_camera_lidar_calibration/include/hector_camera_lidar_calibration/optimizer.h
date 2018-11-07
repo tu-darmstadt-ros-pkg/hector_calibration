@@ -17,8 +17,8 @@ public:
   Optimizer();
   void loadFromBag(std::string file_path);
   void loadData(const std::vector<hector_calibration_msgs::CameraLidarCalibrationData>& data);
-  void run();
-  void visualizeCost();
+  void optimize();
+  void manualCalibration();
 private:
   camera_model::CameraModelLoader camera_model_loader_;
 

@@ -5,12 +5,12 @@
   
   <!-- MAKE SURE TO SWITCH TO INTENSITY BRANCH TO KEEP INTENSITIES IN ACCUMULATED CLOUD -->
   <!-- Accumulated pointcloud -->
- <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="lidar_aggregator_node" output="screen">
+  <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="lidar_aggregator_node" output="screen">
     <remap from="cloud" to="/spin_laser/vlp16"/>
     <remap from="cloud_out" to="/spin_laser/vlp16_agg"/> 
     <param name="target_frame" value="base_link"/>
     <param name="publish_frequency_hz" value="0.2"/>
-  </node>   
+  </node> 
   
   <!-- Capture data -->
   <node pkg="hector_camera_lidar_calibration" type="data_collector_node" name="camera_lidar_calibration_data_collector_node" output="screen">
