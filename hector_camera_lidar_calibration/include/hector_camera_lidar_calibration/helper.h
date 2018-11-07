@@ -16,7 +16,7 @@
 namespace hector_calibration {
 namespace hector_camera_lidar_calibration {
 
-std::string parametersToString(const double * parameters);
+std::string parametersToString(const double* parameters);
 
 cv::Mat drawHistogram(const cv::Mat& hist, bool autoscale = true, float max = 0.0);
 bool containsNanOrInf(const cv::Mat& mat);

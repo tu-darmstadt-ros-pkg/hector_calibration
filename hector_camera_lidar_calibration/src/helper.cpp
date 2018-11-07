@@ -27,9 +27,30 @@ bool containsNanOrInf(const cv::Mat& mat) {
 }
 
 uchar interpolate(const cv::Mat& img, cv::Point2f pt) {
-    cv::Mat patch;
-    cv::getRectSubPix(img, cv::Size(1,1), pt, patch);
-    return static_cast<uchar>(patch.at<float>(0,0));
+  assert(!img.empty());
+  assert(img.channels() == 1);
+
+  // Round down
+  int x = static_cast<int>(pt.x);
+  int y = static_cast<int>(pt.y);
+
+  // Border handling
+  int x0 = cv::borderInterpolate(x,   img.cols, cv::BORDER_REFLECT_101);
+  int x1 = cv::borderInterpolate(x+1, img.cols, cv::BORDER_REFLECT_101);
+  int y0 = cv::borderInterpolate(y,   img.rows, cv::BORDER_REFLECT_101);
+  int y1 = cv::borderInterpolate(y+1, img.rows, cv::BORDER_REFLECT_101);
+
+  float a = pt.x - static_cast<float>(x);
+  float c = pt.y - static_cast<float>(y);
+
+  // Read values of 4 neighboring pixels
+  float v1 = static_cast<float>(img.at<uchar>(y0, x0));
+  float v2 = static_cast<float>(img.at<uchar>(y0, x1));
+  float v3 = static_cast<float>(img.at<uchar>(y1, x0));
+  float v4 = static_cast<float>(img.at<uchar>(y1, x1));
+
+  uchar value = static_cast<uchar>(cvRound((v1 * (1.f - a) + v2 * a) * (1.f - c) + (v3 * (1.f - a) + v4 * a) * c));
+  return value;
 }
 
 uchar interpolate(const cv::Mat& img, Eigen::Vector2d pt) {

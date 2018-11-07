@@ -106,6 +106,7 @@ bool Optimizer::initCalibration()
     parameters_[i] = xyz(i);
     parameters_[i+3] = ypr(2-i);
   }
+
   ROS_INFO_STREAM("Initial calibration: " << parametersToString(parameters_));
 
   mi_cost_ = new FirstOrderMICost(data_, camera_model_loader_, bin_fraction_, scan_sample_size_);

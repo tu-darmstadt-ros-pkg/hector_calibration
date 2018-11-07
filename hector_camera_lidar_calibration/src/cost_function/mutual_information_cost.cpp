@@ -105,8 +105,8 @@ Histogram MutualInformationCost::computeHistogram(const Eigen::Affine3d &cam_tra
         Eigen::Vector2d pixel;
         if (camera_model_.getCamera(cam_obs.name).worldToPixel(point_cam, pixel)) {
 //          ROS_INFO_STREAM("pixel: " << pixel);
-//          uchar intensity = interpolate(cam_obs.cv_image_ptr->image, pixel) / bin_fraction_;
-          uchar intensity = cam_obs.cv_image_ptr->image.at<uchar>(static_cast<int>(pixel(0)), static_cast<int>(pixel(1)));
+          uchar intensity = static_cast<uchar>(interpolate(cam_obs.cv_image_ptr->image, pixel) / bin_fraction_);
+//          uchar intensity = cam_obs.cv_image_ptr->image.at<uchar>(static_cast<int>(pixel(0)), static_cast<int>(pixel(1)));
           uchar reflectance = static_cast<uchar>(point.intensity / bin_fraction_);
 //          ROS_INFO_STREAM("intensity: " << static_cast<int>(intensity) << ", reflectance :" << static_cast<int>(reflectance));
 
