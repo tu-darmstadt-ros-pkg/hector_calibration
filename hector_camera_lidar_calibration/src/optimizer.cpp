@@ -114,8 +114,10 @@ bool Optimizer::initCalibration()
   Eigen::Vector3d xyz = init_transform.translation();
 
   for (unsigned int i = 0; i < 3; i++) {
-    parameters_[i] = xyz(i) + initial_offset_[i];
-    parameters_[i+3] = rpy(i) + initial_offset_[i+3];
+    initial_parameters_[i] = parameters_[i] = xyz(i);
+    parameters_[i] += initial_offset_[i];
+    initial_parameters_[i+3] = parameters_[i+3] = rpy(i);
+    parameters_[i+3] += initial_offset_[i+3];
   }
   ROS_INFO_STREAM("=== Initial calibration ===");
   ROS_INFO_STREAM("Transform from " << data_[0].cam_transform.header.frame_id  << " to " << data_[0].cam_transform.child_frame_id << ":");
@@ -148,6 +150,11 @@ void Optimizer::printResult()
   ROS_INFO_STREAM("==== Result ====");
   ROS_INFO_STREAM("Transform from " << data_[0].cam_transform.child_frame_id  << " to " << data_[0].cam_transform.header.frame_id << ":");
   ROS_INFO_STREAM(parametersToString(result));
+  double difference[6];
+  for (unsigned int i = 0; i < 6; i++) {
+    difference[i] = parameters_[i] - initial_parameters_[i];
+  }
+  ROS_INFO_STREAM("Difference: " << parametersToString(difference));
 }
 
 }
