@@ -15,7 +15,7 @@
     <param name="base_frame" value="base_link"/>
     <param name="cam_head_frame" value="$(arg camera_name)_center_link"/>
     <param name="bin_fraction" value="1"/>
-    <param name="scan_sample_size" value="100000"/>
+    <param name="scan_sample_size" value="10000"/>
     <param name="bag_path" value="$(arg bag_path)"/>
     <param name="capture_data" value="false"/>
     

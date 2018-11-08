@@ -28,6 +28,9 @@ uchar interpolate(const cv::Mat& img, Eigen::Vector2d pt);
 pcl::PointCloud<pcl::PointXYZI> cutReflectance(const pcl::PointCloud<pcl::PointXYZI>& cloud, float min, float max);
 void normalizeReflectance(pcl::PointCloud<pcl::PointXYZI>& cloud, bool autoscale = true, float max = 255.0f);
 
+Eigen::Vector3d rotToRpy(const Eigen::Matrix3d& rot);
+Eigen::Matrix3d rpyToRot(const Eigen::Vector3d& rpy);
+
 }
 }
 

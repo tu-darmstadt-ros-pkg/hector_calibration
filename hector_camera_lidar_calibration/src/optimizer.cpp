@@ -52,6 +52,7 @@ void Optimizer::optimize() {
   std::cout << summary.FullReport() << std::endl;
 
   ROS_INFO_STREAM("Optimization result: " << parametersToString(parameters_));
+  printResult();
 }
 
 void Optimizer::manualCalibration() {
@@ -63,8 +64,11 @@ void Optimizer::manualCalibration() {
   while (ros::ok()) {
     std::cout << "******************************" << std::endl;
     int param_num;
-    std::cout << "Choose parameter number [0-5]: ";
+    std::cout << "Choose parameter number [0-5], enter -1 to exit: ";
     std::cin >> param_num;
+    if (param_num == -1) {
+      break;
+    }
     if (param_num < 0 || param_num > 5) {
       std::cout << "Out of limits" << std::endl;
       continue;
@@ -76,13 +80,14 @@ void Optimizer::manualCalibration() {
     double cost;
     parameters_[param_num] += offset;
     mi_cost_->Evaluate(parameters_, &cost, NULL);
+    ros::spinOnce();
     std::cout << "Cost difference: " << cost - previous_cost << std::endl;
     previous_cost = cost;
     std::cout << std::endl;
     std::cout << std::endl;
   }
 
-  ros::spin();
+  printResult();
 
   delete mi_cost_;
 }
@@ -99,20 +104,49 @@ bool Optimizer::initCalibration()
   Eigen::Affine3d init_transform;
   tf::transformMsgToEigen(data_[0].cam_transform.transform, init_transform);
 
-  Eigen::Vector3d ypr = init_transform.linear().eulerAngles(2, 1, 0);
+  Eigen::Vector3d rpy = rotToRpy(init_transform.linear());
+//  Eigen::Vector3d ypr = init_transform.linear().eulerAngles(2, 1, 0);
   Eigen::Vector3d xyz = init_transform.translation();
 
   for (unsigned int i = 0; i < 3; i++) {
     parameters_[i] = xyz(i);
-    parameters_[i+3] = ypr(2-i);
+    parameters_[i+3] = rpy(i);
   }
-
+//  parameters_[2] += 0.01;
+//  parameters_[4] += 0.01;
+//  parameters_[5] -= 0.04;
   ROS_INFO_STREAM("Initial calibration: " << parametersToString(parameters_));
 
   mi_cost_ = new FirstOrderMICost(data_, camera_model_loader_, bin_fraction_, scan_sample_size_);
   return true;
 }
 
+void Optimizer::printResult()
+{
+  // Convert to transformation matrix
+  Eigen::Vector3d rpy(parameters_[3], parameters_[4], parameters_[5]);
+  Eigen::Affine3d transform(rpyToRot(rpy));
+//  Eigen::Affine3d transform = Eigen::Affine3d::Identity();
+  transform.translation() = Eigen::Vector3d(parameters_[0], parameters_[1], parameters_[2]);
+
+  // Invert transform
+  Eigen::Affine3d transform_inv = transform.inverse();
+  ROS_INFO_STREAM(transform_inv.matrix());
+
+  // Convert back to rpy
+  Eigen::Vector3d xyz_inv = transform_inv.translation();
+  Eigen::Vector3d rpy_inv = rotToRpy(transform_inv.linear());
+  double result[6];
+  const double f = 10000.0;
+  for (unsigned int i = 0; i < 3; i++) {
+    result[i] = std::round(xyz_inv(i) * f) / f;
+    result[i+3] = std::round(rpy_inv(i) * f) / f;
+  }
+
+  ROS_INFO_STREAM("==== Result ====");
+  ROS_INFO_STREAM("Transform from " << data_[0].cam_transform.child_frame_id  << " to " << data_[0].cam_transform.header.frame_id << ":");
+  ROS_INFO_STREAM(parametersToString(result));
+}
 
 }
 }

@@ -21,6 +21,7 @@ public:
   void manualCalibration();
 private:
   bool initCalibration();
+  void printResult();
 
   camera_model::CameraModelLoader camera_model_loader_;
 

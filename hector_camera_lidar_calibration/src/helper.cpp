@@ -1,5 +1,7 @@
 #include <hector_camera_lidar_calibration/helper.h>
 
+#include <kdl/frames.hpp>
+
 #include <pcl/filters/random_sample.h>
 #include <pcl/filters/crop_box.h>
 
@@ -8,7 +10,7 @@ namespace hector_camera_lidar_calibration {
 
 std::string parametersToString(const double * parameters) {
   std::stringstream ss;
-  ss << std::setprecision(17);
+//  ss << std:  :setprecision(17);
   ss << "[x=" << parameters[0] << ", y=" << parameters[1] << ", z=" << parameters[2]
      << "; roll=" << parameters[3] << ", pitch=" << parameters[4] << ", yaw=" << parameters[5] << "]";
   return ss.str();
@@ -61,7 +63,7 @@ uchar interpolate(const cv::Mat& img, Eigen::Vector2d pt) {
 cv::Mat drawHistogram(const cv::Mat& hist, bool autoscale, float max) {
   int image_height = 256;
   int image_width = 256;
-  int bin_width = cvRound( (double) image_width/hist.cols);
+  int bin_width = cvRound( static_cast<double>(image_width)/hist.cols);
   cv::Mat hist_image(image_height, image_width, CV_8UC3, cv::Scalar(255,255,255));
 
   float scaling;
@@ -152,6 +154,37 @@ pcl::PointCloud<pcl::PointXYZI> cropBox(const pcl::PointCloud<pcl::PointXYZI>& c
   pcl::PointCloud<pcl::PointXYZI> cloud_out;
   crop_box.filter(cloud_out);
   return cloud_out;
+}
+
+Eigen::Vector3d rotToRpy(const Eigen::Matrix3d& rot)
+{
+//  auto data = rot.data();
+//  Eigen::Vector3d rpy;
+//  // Taken from kdl::Rotation::GetRPY
+//  double epsilon=1E-12;
+//  rpy[1] = atan2(-data[6], sqrt(data[0]*data[0] + data[3]*data[3] ));
+//  if ( fabs(rpy[1]) > (M_PI/2.0-epsilon) ) {
+//    rpy[2] = atan2(	-data[1], data[4]);
+//    rpy[0]  = 0.0 ;
+//  } else {
+//    rpy[0]  = atan2(data[7], data[8]);
+//    rpy[2]  = atan2(data[3], data[0]);
+//  }
+
+  Eigen::Quaterniond rot_quad(rot);
+  KDL::Rotation kdl_rot = KDL::Rotation::Quaternion(rot_quad.x(), rot_quad.y(), rot_quad.z(), rot_quad.w());
+  Eigen::Vector3d rpy;
+  kdl_rot.GetRPY(rpy[0], rpy[1], rpy[2]);
+  return rpy;
+}
+
+Eigen::Matrix3d rpyToRot(const Eigen::Vector3d& rpy)
+{
+  Eigen::Matrix3d rot;
+  rot = Eigen::AngleAxisd(rpy[2], Eigen::Vector3d::UnitZ())
+      * Eigen::AngleAxisd(rpy[1], Eigen::Vector3d::UnitY())
+      * Eigen::AngleAxisd(rpy[0], Eigen::Vector3d::UnitX());
+  return rot;
 }
 
 }
