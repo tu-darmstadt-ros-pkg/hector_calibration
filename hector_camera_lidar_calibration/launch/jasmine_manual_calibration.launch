@@ -6,16 +6,17 @@
   <arg name="bag_path" default="/tmp/camera_lidar_calibration_data.bag"/>
   
   <!-- Visualize error -->
-  <node pkg="hector_camera_lidar_calibration" type="camera_lidar_calibration_node" name="camera_lidar_calibration_node" output="screen" launch-prefix="">
+  <node pkg="hector_camera_lidar_calibration" type="camera_lidar_calibration_node" name="camera_lidar_calibration_node" output="screen" launch-prefix="" clear_params="true">
     <rosparam file="$(find jasmine_robot_bringup)/config/$(arg calibration_name)/cameras.yaml" command="load" subst_value="True"/>
     <param name="mask_path" value="$(find jasmine_robot_bringup)/config/$(arg calibration_name)/"/>
     
     <param name="manual_calibration" value="true"/>
+<!--     <rosparam command="load" param="initial_offset">[0, 0, 0.01, 0, 0.01, -0.04]</rosparam> -->
     
     <param name="base_frame" value="base_link"/>
     <param name="cam_head_frame" value="$(arg camera_name)_center_link"/>
     <param name="bin_fraction" value="1"/>
-    <param name="scan_sample_size" value="10000"/>
+    <param name="scan_sample_size" value="500000"/>
     <param name="bag_path" value="$(arg bag_path)"/>
     <param name="capture_data" value="false"/>
     

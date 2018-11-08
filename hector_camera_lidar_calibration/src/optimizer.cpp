@@ -10,6 +10,11 @@ Optimizer::Optimizer() {
   ros::NodeHandle pnh("~");
   pnh.param("bin_fraction", bin_fraction_, 1);
   pnh.param("scan_sample_size", scan_sample_size_, 300000);
+  pnh.param("initial_offset", initial_offset_, std::vector<double>(6, 0.0));
+  if (initial_offset_.size() != 6) {
+    ROS_ERROR_STREAM("Initial offset has an invalid size of " << initial_offset_.size() << ". Expected 6.");
+    initial_offset_.resize(6, 0.0);
+  }
 }
 
 void Optimizer::loadFromBag(std::string file_path) {
@@ -109,13 +114,12 @@ bool Optimizer::initCalibration()
   Eigen::Vector3d xyz = init_transform.translation();
 
   for (unsigned int i = 0; i < 3; i++) {
-    parameters_[i] = xyz(i);
-    parameters_[i+3] = rpy(i);
+    parameters_[i] = xyz(i) + initial_offset_[i];
+    parameters_[i+3] = rpy(i) + initial_offset_[i+3];
   }
-//  parameters_[2] += 0.01;
-//  parameters_[4] += 0.01;
-//  parameters_[5] -= 0.04;
-  ROS_INFO_STREAM("Initial calibration: " << parametersToString(parameters_));
+  ROS_INFO_STREAM("=== Initial calibration ===");
+  ROS_INFO_STREAM("Transform from " << data_[0].cam_transform.header.frame_id  << " to " << data_[0].cam_transform.child_frame_id << ":");
+  ROS_INFO_STREAM(parametersToString(parameters_));
 
   mi_cost_ = new FirstOrderMICost(data_, camera_model_loader_, bin_fraction_, scan_sample_size_);
   return true;
@@ -126,12 +130,10 @@ void Optimizer::printResult()
   // Convert to transformation matrix
   Eigen::Vector3d rpy(parameters_[3], parameters_[4], parameters_[5]);
   Eigen::Affine3d transform(rpyToRot(rpy));
-//  Eigen::Affine3d transform = Eigen::Affine3d::Identity();
   transform.translation() = Eigen::Vector3d(parameters_[0], parameters_[1], parameters_[2]);
 
   // Invert transform
   Eigen::Affine3d transform_inv = transform.inverse();
-  ROS_INFO_STREAM(transform_inv.matrix());
 
   // Convert back to rpy
   Eigen::Vector3d xyz_inv = transform_inv.translation();

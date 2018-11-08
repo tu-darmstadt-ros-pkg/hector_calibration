@@ -26,6 +26,7 @@ private:
   camera_model::CameraModelLoader camera_model_loader_;
 
   double parameters_[6];
+  std::vector<double> initial_offset_;
   FirstOrderMICost* mi_cost_;
 
   // Parameters
