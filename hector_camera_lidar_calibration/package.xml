@@ -1,14 +1,9 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
   <name>hector_camera_lidar_calibration</name>
   <version>0.0.0</version>
   <description>The hector_camera_lidar_calibration package</description>
-
-  <!-- One maintainer tag required, multiple allowed, one person per tag -->
-  <!-- Example:  -->
-  <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="martin@todo.todo">martin</maintainer>
-
+  <maintainer email="oehler@sim.tu-darmstadt.de">Martin Oehler</maintainer>
 
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
@@ -21,48 +16,17 @@
   <!-- Example: -->
   <!-- <url type="website">http://wiki.ros.org/hector_camera_lidar_calibration</url> -->
 
+  <author email="oehler@sim.tu-darmstadt.de">Martin Oehler</author>
 
-  <!-- Author tags are optional, multiple are allowed, one per tag -->
-  <!-- Authors do not have to be maintainers, but could be -->
-  <!-- Example: -->
-  <!-- <author email="jane.doe@example.com">Jane Doe</author> -->
-
-
-  <!-- The *_depend tags are used to specify dependencies -->
-  <!-- Dependencies can be catkin packages or system dependencies -->
-  <!-- Examples: -->
-  <!-- Use build_depend for packages you need at compile time: -->
-  <!--   <build_depend>message_generation</build_depend> -->
-  <!-- Use buildtool_depend for build tool packages: -->
-  <!--   <buildtool_depend>catkin</buildtool_depend> -->
-  <!-- Use run_depend for packages you need at runtime: -->
-  <!--   <run_depend>message_runtime</run_depend> -->
-  <!-- Use test_depend for packages you need only for testing: -->
-  <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>camera_model_loader</build_depend>
-  <build_depend>hector_calibration_msgs</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>rosbag</build_depend>
-  <build_depend>ceres-solver</build_depend>
-  <build_depend>pcl_ros</build_depend>
-  <build_depend>tf2_ros</build_depend>
-  <build_depend>tf2_eigen</build_depend>
-  <build_depend>eigen_conversions</build_depend>
-  <run_depend>camera_model_loader</run_depend>
-  <run_depend>hector_calibration_msgs</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>rosbag</run_depend>
-  <run_depend>ceres-solver</run_depend>
-  <run_depend>pcl_ros</run_depend>
-  <run_depend>tf2_ros</run_depend>
-  <run_depend>tf2_eigen</run_depend>
-  <run_depend>eigen_conversions</run_depend>
-
-
-  <!-- The export tag contains other, unspecified, tags -->
-  <export>
-    <!-- Other tools can request additional information be placed here -->
-
-  </export>
+  <depend>camera_model_loader</depend>
+  <depend>hector_calibration_msgs</depend>
+  <depend>roscpp</depend>
+  <depend>rosbag</depend>
+  <depend>ceres-solver</depend>
+  <depend>pcl_ros</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_eigen</depend>
+  <depend>eigen_conversions</depend>
+  <depend>ceres_nlopt_wrapper</depend>
 </package>

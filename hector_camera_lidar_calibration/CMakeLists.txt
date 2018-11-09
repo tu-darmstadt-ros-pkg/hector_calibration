@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   tf2_eigen
   eigen_conversions
+  ceres_nlopt_wrapper
 )
 
 ## System dependencies are found with CMake's conventions

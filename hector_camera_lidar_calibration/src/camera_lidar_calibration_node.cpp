@@ -6,10 +6,11 @@
 int main(int argc, char** argv) {
   ros::init(argc, argv, "camera_lidar_calibration_node");
 
+  ros::NodeHandle nh;
   ros::NodeHandle pnh("~");
   bool capture_data = pnh.param("capture_data", true);
 
-  hector_calibration::hector_camera_lidar_calibration::Optimizer opt;
+  hector_calibration::hector_camera_lidar_calibration::Optimizer opt(nh, pnh);
 
   if (capture_data) {
     hector_calibration::hector_camera_lidar_calibration::DataCollector collector;

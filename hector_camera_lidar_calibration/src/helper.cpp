@@ -10,7 +10,7 @@ namespace hector_camera_lidar_calibration {
 
 std::string parametersToString(const double * parameters) {
   std::stringstream ss;
-//  ss << std:  :setprecision(17);
+  ss << std::setprecision(17);
   ss << "[x=" << parameters[0] << ", y=" << parameters[1] << ", z=" << parameters[2]
      << "; roll=" << parameters[3] << ", pitch=" << parameters[4] << ", yaw=" << parameters[5] << "]";
   return ss.str();

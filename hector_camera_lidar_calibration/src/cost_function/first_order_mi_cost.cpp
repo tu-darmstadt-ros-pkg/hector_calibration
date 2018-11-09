@@ -35,5 +35,10 @@ bool FirstOrderMICost::Evaluate(const double* parameters, double* cost, double* 
   return true;
 }
 
+ceres::CostFunction*FirstOrderMICost::getCostFunction()
+{
+  return cost_function_;
+}
+
 }
 }

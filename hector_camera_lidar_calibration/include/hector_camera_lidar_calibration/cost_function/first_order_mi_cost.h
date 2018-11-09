@@ -15,6 +15,7 @@ public:
   ~FirstOrderMICost();
 
   virtual bool Evaluate(const double* parameters, double* cost, double* gradient) const;
+  ceres::CostFunction* getCostFunction();
 private:
   virtual int NumParameters() const { return 6; }
 

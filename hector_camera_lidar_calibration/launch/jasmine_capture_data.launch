@@ -9,7 +9,7 @@
     <remap from="cloud" to="/spin_laser/vlp16"/>
     <remap from="cloud_out" to="/spin_laser/vlp16_agg"/> 
     <param name="target_frame" value="base_link"/>
-    <param name="publish_frequency_hz" value="0.2"/>
+    <param name="publish_frequency_hz" value="0.04"/>
   </node> 
   
   <!-- Capture data -->

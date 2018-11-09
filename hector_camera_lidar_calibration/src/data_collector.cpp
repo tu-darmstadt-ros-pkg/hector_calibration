@@ -21,13 +21,16 @@ DataCollector::DataCollector()
 hector_calibration_msgs::CameraLidarCalibrationData DataCollector::captureData() {
   ROS_INFO_STREAM("Waiting for data..");
   ros::Rate rate(1);
-  while (captured_clouds < 2 || !receivedImages()) {
+  while (ros::ok() && (captured_clouds < 2 || !receivedImages())) {
     rate.sleep();
     ros::spinOnce();
   }
+  hector_calibration_msgs::CameraLidarCalibrationData data;
+  if (!ros::ok()) {
+    return data;
+  }
   ROS_INFO_STREAM("Received all data");
 
-  hector_calibration_msgs::CameraLidarCalibrationData data;
   // Find transformation to transform data from base_frame to cam head
   try {
     data.cam_transform = tf_buffer_.lookupTransform(cam_head_frame_, base_frame_, ros::Time(0));

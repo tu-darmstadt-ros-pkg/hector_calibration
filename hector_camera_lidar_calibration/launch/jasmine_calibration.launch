@@ -11,12 +11,24 @@
     <param name="mask_path" value="$(find jasmine_robot_bringup)/config/$(arg calibration_name)/"/>
     
     <param name="manual_calibration" value="false"/>
-<!--     <rosparam command="load" param="initial_offset">[0, 0, 0.01, 0, 0.01, -0.04]</rosparam> -->
+    <param name="add_bounds" value="true"/>
+    <param name="optimizer" value="LN_NELDERMEAD"/>
+<!--     <param name="optimizer" value="LN_BOBYQA"/>   -->
+<!--     <param name="optimizer" value="LN_SBPLX"/>     -->
+<!--    <param name="optimizer" value="LN_PRAXIS"/>   -->
+<!--     <param name="optimizer" value="LN_COBYLA"/>    -->
+<!--     <param name="optimizer" value="GN_DIRECT_L"/> -->
+    
+    
+    <rosparam command="load" param="initial_offset">[0.0337449, 0.0205761, -0.0296296, -0.00411523, -0.0329218, 0.0436214]</rosparam>
+    <rosparam command="load" param="stopping_criteria">
+      maxeval: 100
+    </rosparam>
     
     <param name="base_frame" value="base_link"/>
     <param name="cam_head_frame" value="$(arg camera_name)_center_link"/>
     <param name="bin_fraction" value="1"/>
-    <param name="scan_sample_size" value="100000"/>
+    <param name="scan_sample_size" value="10000000"/>
     <param name="bag_path" value="$(arg bag_path)"/>
     <param name="capture_data" value="false"/>
   </node>
