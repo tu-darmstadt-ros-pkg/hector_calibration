@@ -18,13 +18,19 @@ int main(int argc, char** argv) {
     data_vec.push_back(data);
     opt.loadData(data_vec);
   } else {
-    std::string bag_path;
-    if (!pnh.getParam("bag_path", bag_path)) {
-      ROS_ERROR_STREAM("Mandatory parameter 'bag_path', missing in nh '" << pnh.getNamespace() << "'!");
-      return 0;
+    std::vector<std::string> bag_paths;
+    if (pnh.getParam("bag_paths", bag_paths) && !bag_paths.empty()) {
+      for (const std::string& path: bag_paths) {
+        opt.loadFromBag(path);
+      }
+    } else {
+      std::string bag_path;
+      if (!pnh.getParam("bag_path", bag_path)) {
+        ROS_ERROR_STREAM("Mandatory parameter 'bag_path', missing in nh '" << pnh.getNamespace() << "'!");
+        return 0;
+      }
+      opt.loadFromBag(bag_path);
     }
-    ROS_INFO_STREAM("Starting calibration from bag: " << bag_path);
-    opt.loadFromBag(bag_path);
   }
 
   bool manual_calibration = pnh.param("manual_calibration", false);

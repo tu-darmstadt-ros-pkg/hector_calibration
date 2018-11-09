@@ -18,6 +18,7 @@ Optimizer::Optimizer() {
 }
 
 void Optimizer::loadFromBag(std::string file_path) {
+  ROS_INFO_STREAM("Loading calibration bag from '" << file_path << "'.");
   rosbag::Bag bag;
   try {
     bag.open(file_path, rosbag::bagmode::Read);
