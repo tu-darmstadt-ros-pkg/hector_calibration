@@ -200,9 +200,9 @@ void LidarCalibration::calibrate() {
 
     // Compute normals with weight
     std::vector<WeightedNormal> normals = computeNormals(cloud1, options_.normals_radius);
-    if (vis_normals_) {
-      visualizeNormals(cloud1, normals);
-    }
+//    if (vis_normals_) {
+//      visualizeNormals(cloud1, normals);
+//    }
 
     // Find neighbors
     std::map<unsigned int, unsigned int> neighbor_mapping = findNeighbors(cloud1, cloud2, options_.max_sqrt_neighbor_dist);

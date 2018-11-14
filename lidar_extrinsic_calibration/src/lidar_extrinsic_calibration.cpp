@@ -7,7 +7,7 @@ nh_(nh),
 first_cloud_(true) {
   cloud_sub_ = nh_.subscribe("cloud", 1000, &LidarExtrinsicCalibration::pointCloudCb, this);
   //result_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("result", 1000);
-  ground_plane_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("ground_plane", 1000);
+  ground_plane_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("ground_plane", 1000, true);
 
   ros::NodeHandle pnh("~");
   pnh.param<std::string>("ground_frame", ground_frame_, "base_link");
@@ -17,7 +17,7 @@ first_cloud_(true) {
 }
 
 void LidarExtrinsicCalibration::calibrateGround() {
-  // wait for cloud
+  // Wait for cloud
   ROS_INFO_STREAM("Waiting for point cloud..");
   while (!last_cloud_ptr_ && ros::ok()) {
     ros::spinOnce();
@@ -31,7 +31,7 @@ void LidarExtrinsicCalibration::calibrateGround() {
   ROS_INFO_STREAM("Point cloud size: " << pcl_cloud_ptr->size());
 
   // Transform to ground frame
-  Eigen::Affine3d plane_transform = getTransform(ground_frame_, last_cloud_ptr_->header.frame_id);
+  Eigen::Affine3d plane_transform = getTransform(ground_frame_, last_cloud_ptr_->header.frame_id, last_cloud_ptr_->header.stamp);
   pcl::transformPointCloud(*pcl_cloud_ptr, *pcl_cloud_ptr, plane_transform);
 
   // Cut off top part
@@ -80,7 +80,7 @@ void LidarExtrinsicCalibration::calibrateGround() {
   ground_plane_pub_.publish(ground_plane_msg);
 
   // Calculate angle from ground plane to ground frame around x-axis
-  double nx = coefficients.values[0]; double ny = coefficients.values[1]; double nz = coefficients.values[2];
+  float nx = coefficients.values[0]; float ny = coefficients.values[1]; float nz = coefficients.values[2];
 
   double roll = M_PI/2 - std::acos(ny/std::sqrt(std::pow(ny, 2) + std::pow(nz, 2)));
   double pitch = M_PI/2 - std::acos(nx/std::sqrt(std::pow(nx, 2) + std::pow(nz, 2)));
@@ -101,11 +101,11 @@ void LidarExtrinsicCalibration::pointCloudCb(const sensor_msgs::PointCloud2Const
   last_cloud_ptr_ = cloud_ptr;
 }
 
-Eigen::Affine3d LidarExtrinsicCalibration::getTransform(std::string frame_base, std::string frame_target) const {
-  ros::Time now = ros::Time::now();
-  if (tfl_.waitForTransform(frame_base, frame_target, now, tf_wait_duration_)) {
+Eigen::Affine3d LidarExtrinsicCalibration::getTransform(std::string frame_base, std::string frame_target, const ros::Time& time) const
+{
+  if (tfl_.waitForTransform(frame_base, frame_target, time, tf_wait_duration_)) {
     tf::StampedTransform transform;
-    tfl_.lookupTransform(frame_base, frame_target, now, transform);
+    tfl_.lookupTransform(frame_base, frame_target, time, transform);
 
     Eigen::Affine3d transform_eigen;
     tf::transformTFToEigen(transform, transform_eigen);
@@ -114,6 +114,10 @@ Eigen::Affine3d LidarExtrinsicCalibration::getTransform(std::string frame_base, 
     ROS_WARN_STREAM("Could not find transform from " << frame_base << " to " << frame_target << ". Using identity.");
     return Eigen::Affine3d::Identity();
   }
+}
+
+Eigen::Affine3d LidarExtrinsicCalibration::getTransform(std::string frame_base, std::string frame_target) const {
+  return getTransform(frame_base, frame_target, ros::Time::now());
 }
 
 }
