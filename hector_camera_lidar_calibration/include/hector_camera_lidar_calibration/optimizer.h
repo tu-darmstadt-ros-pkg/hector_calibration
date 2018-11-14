@@ -33,7 +33,6 @@ private:
   camera_model::CameraModelLoader camera_model_loader_;
 
   std::vector<double> initial_parameters_;
-  std::vector<double> initial_offset_;
   std::vector<double> parameters_;
 
   double initial_cost_;

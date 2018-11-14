@@ -20,7 +20,7 @@
 <!--     <param name="optimizer" value="GN_DIRECT_L"/> -->
     
     
-    <rosparam command="load" param="initial_offset">[0.0337449, 0.0205761, -0.0296296, -0.00411523, -0.0329218, 0.0436214]</rosparam>
+<!--     <rosparam command="load" param="initial_parameters">[0.0337449, 0.0205761, -0.0296296, -0.00411523, -0.0329218, 0.0436214]</rosparam> -->
     <rosparam command="load" param="stopping_criteria">
       maxeval: 100
     </rosparam>

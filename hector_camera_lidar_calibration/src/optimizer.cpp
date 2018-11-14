@@ -11,14 +11,14 @@ Optimizer::Optimizer(const ros::NodeHandle& nh, const ros::NodeHandle& pnh)
   pnh.param("optimizer", optimizer_, std::string("ceres"));
   pnh.param("bin_fraction", bin_fraction_, 1);
   pnh.param("scan_sample_size", scan_sample_size_, 300000);
-  pnh.param("initial_offset", initial_offset_, std::vector<double>(6, 0.0));
-  if (initial_offset_.size() != 6) {
-    ROS_ERROR_STREAM("Initial offset has an invalid size of " << initial_offset_.size() << ". Expected 6.");
-    initial_offset_.resize(6, 0.0);
+  if (pnh.getParam("initial_parameters", initial_parameters_)) {
+      if (initial_parameters_.size() != 6) {
+        ROS_ERROR_STREAM("Initial parameters have an invalid size of " << initial_parameters_.size() << ". Expected 6.");
+        initial_parameters_.clear();
+      }
   }
 
   parameters_.resize(6, 0);
-  initial_parameters_.resize(6, 0);
 }
 
 void Optimizer::loadFromBag(std::string file_path) {
@@ -108,12 +108,16 @@ bool Optimizer::initCalibration()
 //  Eigen::Vector3d ypr = init_transform.linear().eulerAngles(2, 1, 0);
   Eigen::Vector3d xyz = init_transform.translation();
 
-  for (unsigned int i = 0; i < 3; i++) {
-    initial_parameters_[i] = parameters_[i] = xyz(i);
-    parameters_[i] += initial_offset_[i];
-    initial_parameters_[i+3] = parameters_[i+3] = rpy(i);
-    parameters_[i+3] += initial_offset_[i+3];
+  if (initial_parameters_.empty()) {
+    initial_parameters_.resize(6);
+    for (unsigned int i = 0; i < 3; i++) {
+      initial_parameters_[i] = parameters_[i] = xyz(i);
+      initial_parameters_[i+3] = parameters_[i+3] = rpy(i);
+    }
+  } else {
+    parameters_ = initial_parameters_;
   }
+
   ROS_INFO_STREAM("=== Initial calibration ===");
   ROS_INFO_STREAM("Transform from " << data_[0].cam_transform.header.frame_id  << " to " << data_[0].cam_transform.child_frame_id << ":");
   ROS_INFO_STREAM(ceres_nlopt_wrapper::vecToString(parameters_));
@@ -132,7 +136,7 @@ void Optimizer::printResult()
   result_ss << "Result:\t\t" << ceres_nlopt_wrapper::vecToString(parameters_) << std::endl;
   std::vector<double> difference(6);
   for (unsigned int i = 0; i < 6; i++) {
-    difference[i] = parameters_[i] - initial_parameters_[i];
+    difference[i] = initial_parameters_[i] - parameters_[i];
   }
   result_ss << "Difference:\t" << ceres_nlopt_wrapper::vecToString((difference)) << std::endl;
   result_ss << std::endl;
