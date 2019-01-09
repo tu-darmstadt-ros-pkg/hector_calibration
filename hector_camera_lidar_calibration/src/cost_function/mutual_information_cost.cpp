@@ -50,13 +50,20 @@ void MutualInformationCost::readData(const std::vector<hector_calibration_msgs::
       CameraObservation cam_obs;
       cam_obs.name = cam_obs_msg.name.data;
 
-      cam_obs.cv_image_ptr = cv_bridge::toCvCopy(cam_obs_msg.image);
-      cv::cvtColor(cam_obs.cv_image_ptr->image, cam_obs.cv_image_ptr->image, cv::COLOR_RGB2GRAY);
-      cam_obs.cv_image_color_ptr = cv_bridge::toCvCopy(cam_obs_msg.image);
-      cam_obs.cv_image_ptr->encoding = sensor_msgs::image_encodings::TYPE_8UC1;
-      cv::imwrite("gray_image.jpg", cam_obs.cv_image_ptr->image);
+      try {
+        cam_obs.cv_image_ptr = cv_bridge::toCvCopy(cam_obs_msg.image);
+        cv::cvtColor(cam_obs.cv_image_ptr->image, cam_obs.cv_image_ptr->image, cv::COLOR_RGB2GRAY);
+        cam_obs.cv_image_color_ptr = cv_bridge::toCvCopy(cam_obs_msg.image);
+        cam_obs.cv_image_ptr->encoding = sensor_msgs::image_encodings::TYPE_8UC1;
+        cv::imwrite("gray_image.jpg", cam_obs.cv_image_ptr->image);
+      } catch (cv_bridge::Exception& e) {
+        ROS_ERROR_STREAM("Failed to convert image to cv::Mat: Reason: " << e.what());
+        ROS_ERROR_STREAM("Encoding: " << cam_obs_msg.image.encoding);
+        continue;
+      }
 
-      cam_obs.cv_mask_ptr = cv_bridge::toCvCopy(cam_obs_msg.mask);
+
+//      cam_obs.cv_mask_ptr = cv_bridge::toCvCopy(cam_obs_msg.mask);
 //      cv::imwrite("mask.jpg", cam_obs.cv_mask_ptr->image);
 
       tf::transformMsgToEigen(cam_obs_msg.transform.transform, cam_obs.transform);
