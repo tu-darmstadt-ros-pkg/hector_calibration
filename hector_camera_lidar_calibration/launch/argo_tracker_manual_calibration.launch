@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<launch> 
+  <arg name="camera_name" default="camera360" />
+  <arg name="calibration_name" default="insta360_3_omni_radtan"/>
+  
+  <arg name="bag_path" default="/tmp/camera_lidar_calibration_data.bag"/>
+  
+  <!-- Visualize error -->
+  <node pkg="hector_camera_lidar_calibration" type="camera_lidar_calibration_node" name="camera_lidar_calibration_node" output="screen" launch-prefix="" clear_params="true">
+    <rosparam file="$(find argo_tracker_onboard_launch)/config/$(arg calibration_name)/cameras.yaml" command="load" subst_value="True"/>
+    <param name="mask_path" value="$(find argo_tracker_onboard_launch)/config/$(arg calibration_name)/"/>
+    
+    <param name="manual_calibration" value="true"/>
+<!--     <rosparam command="load" param="initial_parameters">[-0.00672667, 0.00191146, -0.611906, -0.00377658, -0.0345362, 0.0389105]</rosparam> -->
+    
+    <param name="base_frame" value="base_link"/>
+    <param name="cam_head_frame" value="$(arg camera_name)_center_link"/>
+    <param name="bin_fraction" value="1"/>
+    <param name="scan_sample_size" value="10000000"/>
+    <param name="bag_path" value="$(arg bag_path)"/>
+    <param name="capture_data" value="false"/>
+  </node>
+</launch>

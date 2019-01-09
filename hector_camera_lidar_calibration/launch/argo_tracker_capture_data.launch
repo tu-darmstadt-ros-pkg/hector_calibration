@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<launch> 
+    <arg name="camera_name" default="camera360" />
+  <arg name="calibration_name" default="insta360_3_omni_radtan"/>
+  
+  <!-- MAKE SURE TO SWITCH TO INTENSITY BRANCH TO KEEP INTENSITIES IN ACCUMULATED CLOUD -->
+  <!-- Accumulated pointcloud -->
+  <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="lidar_aggregator_node" output="screen">
+    <remap from="cloud" to="/spin_laser/vlp16"/>
+    <remap from="cloud_out" to="/spin_laser/vlp16_agg"/> 
+    <param name="target_frame" value="base_link"/>
+    <param name="publish_frequency_hz" value="0.04"/>
+  </node> 
+  
+  <!-- Capture data -->
+  <node pkg="hector_camera_lidar_calibration" type="data_collector_node" name="camera_lidar_calibration_data_collector_node" output="screen">
+    <rosparam file="$(find argo_tracker_onboard_launch)/config/$(arg calibration_name)/cameras.yaml" command="load" subst_value="True"/>
+    <param name="mask_path" value="$(find argo_tracker_onboard_launch)/config/$(arg calibration_name)/"/>
+    
+    <param name="base_frame" value="base_link"/>
+    <param name="cam_head_frame" value="$(arg camera_name)_center_link"/>
+    
+    <remap from="cloud" to="/spin_laser/vlp16_agg"/>
+  </node>
+</launch>
