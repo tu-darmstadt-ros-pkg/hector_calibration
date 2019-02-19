@@ -23,7 +23,7 @@
   <depend>hector_calibration_msgs</depend>
   <depend>roscpp</depend>
   <depend>rosbag</depend>
-  <depend>ceres-solver</depend>
+  <depend>ceres_catkin</depend>
   <depend>pcl_ros</depend>
   <depend>tf2_ros</depend>
   <depend>tf2_eigen</depend>

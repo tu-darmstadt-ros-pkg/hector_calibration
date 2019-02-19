@@ -12,7 +12,7 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <depend>lidar_calibration_lib</depend>
-  <depend>ceres-solver</depend>
+  <depend>ceres_catkin</depend>
 
   <export>
   </export>

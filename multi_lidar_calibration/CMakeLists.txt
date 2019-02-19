@@ -6,11 +6,12 @@ project(multi_lidar_calibration)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   lidar_calibration_lib
+  ceres_catkin
 )
 
 add_compile_options(-std=c++11)
 
-find_package(Ceres REQUIRED)
+#find_package(Ceres REQUIRED)
 
 #SET(CMAKE_BUILD_TYPE RelWithDebInfo)
 

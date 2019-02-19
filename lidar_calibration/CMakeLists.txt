@@ -7,6 +7,7 @@ project(lidar_calibration)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   lidar_calibration_lib
+  ceres_catkin
 )
 
 add_compile_options(-std=c++11)
@@ -14,7 +15,7 @@ add_compile_options(-std=c++11)
 #SET(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 ## System dependencies are found with CMake's conventions
-find_package(Ceres REQUIRED)
+#find_package(Ceres REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -25,6 +26,7 @@ catkin_package(
   CATKIN_DEPENDS
     roscpp 
     lidar_calibration_lib
+    ceres_catkin
 #   DEPENDS 
 )
 

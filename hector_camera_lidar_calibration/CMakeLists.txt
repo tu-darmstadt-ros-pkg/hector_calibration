@@ -17,11 +17,12 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_eigen
   eigen_conversions
   ceres_nlopt_wrapper
+  ceres_catkin
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-find_package(Ceres REQUIRED)
+#find_package(Ceres REQUIRED)
 
 
 ################################################
