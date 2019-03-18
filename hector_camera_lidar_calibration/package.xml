@@ -19,7 +19,7 @@
   <author email="oehler@sim.tu-darmstadt.de">Martin Oehler</author>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <depend>camera_model_loader</depend>
+  <depend>kalibr_camera_loader</depend>
   <depend>hector_calibration_msgs</depend>
   <depend>roscpp</depend>
   <depend>rosbag</depend>

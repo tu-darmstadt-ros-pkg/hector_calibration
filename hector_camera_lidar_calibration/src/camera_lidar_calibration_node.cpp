@@ -13,7 +13,7 @@ int main(int argc, char** argv) {
   hector_calibration::hector_camera_lidar_calibration::Optimizer opt(nh, pnh);
 
   if (capture_data) {
-    hector_calibration::hector_camera_lidar_calibration::DataCollector collector;
+    hector_calibration::hector_camera_lidar_calibration::DataCollector collector(nh, pnh);
     hector_calibration_msgs::CameraLidarCalibrationData data = collector.captureData();
     std::vector<hector_calibration_msgs::CameraLidarCalibrationData> data_vec;
     data_vec.push_back(data);

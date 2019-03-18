@@ -30,7 +30,7 @@ private:
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
 
-  camera_model::CameraModelLoader camera_model_loader_;
+  kalibr_image_geometry::CameraLoader camera_loader_;
 
   std::vector<double> initial_parameters_;
   std::vector<double> parameters_;

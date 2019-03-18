@@ -6,7 +6,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <boost/filesystem.hpp>
 
-#include <camera_model_loader/camera_model_loader.h>
+#include <kalibr_camera_loader/camera_loader.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <hector_calibration_msgs/CameraLidarCalibrationData.h>
 
@@ -17,16 +17,18 @@ namespace hector_camera_lidar_calibration {
 
 class DataCollector {
 public:
-  DataCollector();
+  DataCollector(const ros::NodeHandle& nh, const ros::NodeHandle& pnh);
   hector_calibration_msgs::CameraLidarCalibrationData captureData();
 private:
   void cloudCb(const sensor_msgs::PointCloud2ConstPtr& cloud_ptr);
-  bool receivedImages();
+
+  ros::NodeHandle nh_;
+  ros::NodeHandle pnh_;
 
   int captured_clouds;
   ros::Subscriber cloud_sub_;
   sensor_msgs::PointCloud2ConstPtr last_cloud_ptr_;
-  camera_model::CameraModelLoader camera_model_loader_;
+  kalibr_image_geometry::CameraLoader camera_loader_;
 
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;

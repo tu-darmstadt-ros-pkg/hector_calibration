@@ -5,7 +5,9 @@
 int main(int argc, char** argv) {
   ros::init(argc, argv, "data_collector_node");
 
-  hector_calibration::hector_camera_lidar_calibration::DataCollector collector;
+  ros::NodeHandle nh;
+  ros::NodeHandle pnh("~");
+  hector_calibration::hector_camera_lidar_calibration::DataCollector collector(nh, pnh);
   collector.captureData();
  
   return 0;

@@ -3,16 +3,11 @@
 namespace hector_calibration {
 namespace hector_camera_lidar_calibration {
 
-DataCollector::DataCollector()
-  : captured_clouds(0), tf_listener_(tf_buffer_) {
-  ros::NodeHandle cam_nh("~");
-  camera_model_loader_.loadCamerasFromNamespace(cam_nh);
-  camera_model_loader_.startSubscribers();
+DataCollector::DataCollector(const ros::NodeHandle& nh, const ros::NodeHandle& pnh)
+  : nh_(nh), pnh_(pnh), captured_clouds(0), tf_listener_(tf_buffer_), camera_loader_(nh, pnh) {
 
-  ros::NodeHandle nh;
-  cloud_sub_ = nh.subscribe("cloud", 1, &DataCollector::cloudCb, this);
+  cloud_sub_ = nh_.subscribe("cloud", 1, &DataCollector::cloudCb, this);
 
-  ros::NodeHandle pnh("~");
   pnh.param<std::string>("base_frame", base_frame_, "base_link");
   pnh.param<std::string>("cam_head_frame", cam_head_frame_, "cam_head");
   pnh.param<std::string>("mask_path", mask_path_, "");
@@ -21,7 +16,7 @@ DataCollector::DataCollector()
 hector_calibration_msgs::CameraLidarCalibrationData DataCollector::captureData() {
   ROS_INFO_STREAM("Waiting for data..");
   ros::Rate rate(1);
-  while (ros::ok() && (captured_clouds < 2 || !receivedImages())) {
+  while (ros::ok() && (captured_clouds < 2 || camera_loader_.imagesReceived())) {
     rate.sleep();
     ros::spinOnce();
   }
@@ -45,14 +40,13 @@ hector_calibration_msgs::CameraLidarCalibrationData DataCollector::captureData()
   }
 
   // Add images
-  for (std::map<std::string, camera_model::Camera>::const_iterator c = camera_model_loader_.getCameraMap().begin(); c != camera_model_loader_.getCameraMap().end(); ++c) {
-    const camera_model::Camera& cam = c->second;
+  for (const kalibr_image_geometry::CameraPtr& cam: camera_loader_.cameras()) {
     hector_calibration_msgs::CameraObservation cam_obs;
-    cam_obs.name.data = cam.getName();
-    cam_obs.image = *cam.getLastImage();
+    cam_obs.name.data = cam->getName();
+    cam_obs.image = *cam->getLastImage();
     std::string frame_id;
-    if (cam.getFrameId() != "") {
-      frame_id = cam.getFrameId();
+    if (cam->model().cameraInfo().frame_id != "") {
+      frame_id = cam->model().cameraInfo().frame_id;
     } else {
       frame_id = cam_obs.image.header.frame_id;
     }
@@ -60,15 +54,6 @@ hector_calibration_msgs::CameraLidarCalibrationData DataCollector::captureData()
       cam_obs.transform = tf_buffer_.lookupTransform(frame_id, cam_head_frame_, ros::Time(0));
     } catch (tf2::TransformException &ex) {
       ROS_WARN("%s",ex.what());
-    }
-    // add mask
-    if (mask_path_ != "") {
-      boost::filesystem::path path = mask_path_ / boost::filesystem::path(cam.getName() + "_mask.png");
-      cv::Mat mask = cv::imread(path.string(), CV_LOAD_IMAGE_GRAYSCALE);
-      cv_bridge::CvImage cv_image;
-      cv_image.encoding = sensor_msgs::image_encodings::TYPE_8UC1;
-      cv_image.image = mask;
-      cam_obs.mask = *  cv_image.toImageMsg();
     }
     data.camera_observations.push_back(cam_obs);
   }
@@ -83,16 +68,6 @@ hector_calibration_msgs::CameraLidarCalibrationData DataCollector::captureData()
   ROS_INFO_STREAM("Saved data to " << filename);
 
   return data;
-}
-
-bool DataCollector::receivedImages() {
-  for (std::map<std::string, camera_model::Camera>::const_iterator c = camera_model_loader_.getCameraMap().begin(); c != camera_model_loader_.getCameraMap().end(); ++c) {
-    const camera_model::Camera& cam = c->second;
-    if(!cam.getLastImage()) {
-      return false;
-    }
-  }
-  return true;
 }
 
 void DataCollector::cloudCb(const sensor_msgs::PointCloud2ConstPtr& cloud_ptr) {

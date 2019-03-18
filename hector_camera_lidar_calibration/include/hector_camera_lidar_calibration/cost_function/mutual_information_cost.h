@@ -8,7 +8,7 @@
 
 #include <ceres/ceres.h>
 #include <hector_calibration_msgs/CameraLidarCalibrationData.h>
-#include <camera_model_loader/camera_model_loader.h>
+#include <kalibr_camera_loader/camera_loader.h>
 #include <hector_camera_lidar_calibration/helper.h>
 
 #include <pcl_ros/point_cloud.h>
@@ -33,7 +33,6 @@ struct CameraObservation {
   std::string name; // cam name
   cv_bridge::CvImagePtr cv_image_ptr;
   cv_bridge::CvImagePtr cv_image_color_ptr;
-  cv_bridge::CvImagePtr cv_mask_ptr;
   Eigen::Affine3d transform; // transform from camera head to this camera
 };
 
