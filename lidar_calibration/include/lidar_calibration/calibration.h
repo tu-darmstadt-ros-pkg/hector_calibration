@@ -76,7 +76,7 @@ struct Calibration {
   }
 
   double operator()(int n) const {
-    if (n == 0) return y;
+    if (n == 0) return x;
     if (n == 1) return y;
     if (n == 2) return z;
     if (n == 3) return roll;
