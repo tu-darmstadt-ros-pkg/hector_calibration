@@ -1,2 +1,2 @@
-*.user
+CMakeLists.txt.user*
 .idea
