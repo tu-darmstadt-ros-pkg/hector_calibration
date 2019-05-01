@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<launch>  
+  <!-- Accumulated pointcloud -->
+  <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="lidar_aggregator_node" output="screen" >
+    <remap from="cloud" to="scan_cloud_filtered"/>
+    <remap from="cloud_out" to="cloud_agg"/>
+    <param name="target_frame" value="autonomy_box_link"/>
+    <param name="publish_frequency_hz" value="0.25"/>
+  </node>
+  
+  <node pkg="vigir_cloud_to_planar_scan" type="periodic_cloud_aggregator_node" name="depth_aggregator_node" output="screen" ns="/back_rgbd_cam/depth/color/">
+    <remap from="cloud" to="points_throttle"/>
+    <remap from="cloud_out" to="cloud_agg"/>
+    <param name="target_frame" value="autonomy_box_link"/>
+    <param name="publish_frequency_hz" value="10"/>
+  </node>
+  
+  <!-- Start calibration -->
+  <node pkg="multi_lidar_calibration" type="multi_lidar_calibration_node" name="multi_lidar_calibration_node" output="screen">
+    <param name="base_frame" value="autonomy_box_link"/>
+    <param name="target_frame" value="back_rgbd_cam_mount_link"/>
+    <param name="max_sqr_dist" value="0.01" />
+    <param name="parameter_diff_thres" value="0.000001" />
+
+    <remap from="cloud1" to="/cloud_agg" />
+    <remap from="cloud2" to="/back_rgbd_cam/depth/color/cloud_agg" />
+    
+    <param name="save_path" value="$(find multi_lidar_calibration)/calibrations/back_rgbd_cam.urdf.xacro"/>
+  </node>
+</launch>
