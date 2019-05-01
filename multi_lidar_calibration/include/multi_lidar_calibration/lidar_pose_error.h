@@ -61,12 +61,7 @@ struct LidarPoseError {
     );
     calibration.translation() = Vector3T<T>(T(translation[0]), T(translation[1]), T(translation[2]));
 
-    Vector3T<T> nt(T(normal_.normal(0)), T(normal_.normal(1)), T(normal_.normal(2)));
-
-    Vector3T<T> x1(T(x1_(0)), T(x1_(1)), T(x1_(2)));
-    Vector3T<T> x2(T(x2_(0)), T(x2_(1)), T(x2_(2)));
-
-    residuals[0] = T(normal_.weight) * nt.transpose() * (x1 - calibration * x2);
+    residuals[0] = T(normal_.weight) * normal_.normal.cast<T>().transpose() * (x1_.cast<T>() - calibration * x2_.cast<T>());
 
     return true;
   }

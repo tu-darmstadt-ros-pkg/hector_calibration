@@ -28,7 +28,7 @@ namespace lidar_calibration {
 class MultiLidarCalibration {
 public:
   MultiLidarCalibration(ros::NodeHandle nh);
-  Eigen::Affine3d calibrate(pcl::PointCloud<pcl::PointXYZ> cloud1, pcl::PointCloud<pcl::PointXYZ> cloud2);
+  Eigen::Affine3d calibrate(pcl::PointCloud<pcl::PointXYZ>& cloud1, pcl::PointCloud<pcl::PointXYZ>& cloud2);
   Eigen::Affine3d calibrate(const sensor_msgs::PointCloud2& cloud1_msg, const sensor_msgs::PointCloud2& cloud2_msg);
 private:
   void preprocessClouds(pcl::PointCloud<pcl::PointXYZ>& cloud1, pcl::PointCloud<pcl::PointXYZ>& cloud2);

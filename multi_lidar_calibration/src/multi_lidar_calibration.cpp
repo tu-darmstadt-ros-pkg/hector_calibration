@@ -8,9 +8,9 @@ MultiLidarCalibration::MultiLidarCalibration(ros::NodeHandle nh) :
 {
   // Init publishers
   for (unsigned int i = 0; i < 2; i++) {
-    raw_pub_[i] = nh_.advertise<sensor_msgs::PointCloud2>("raw_cloud" + std::to_string(i), 1000);
-    preprocessed_pub_[i] = nh_.advertise<sensor_msgs::PointCloud2>("preprocessed_cloud" + std::to_string(i), 1000);
-    result_pub_[i] = nh_.advertise<sensor_msgs::PointCloud2>("result_cloud" + std::to_string(i), 1000);
+    raw_pub_[i] = nh_.advertise<sensor_msgs::PointCloud2>("raw_cloud" + std::to_string(i), 1000, true);
+    preprocessed_pub_[i] = nh_.advertise<sensor_msgs::PointCloud2>("preprocessed_cloud" + std::to_string(i), 1000, true);
+    result_pub_[i] = nh_.advertise<sensor_msgs::PointCloud2>("result_cloud" + std::to_string(i), 1000, true);
   }
   mapping_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("neighbor_mapping", 1000);
   // Load parameters
@@ -54,8 +54,8 @@ MultiLidarCalibration::calibrate(const sensor_msgs::PointCloud2& cloud1_msg,
 }
 
 Eigen::Affine3d
-MultiLidarCalibration::calibrate(pcl::PointCloud<pcl::PointXYZ> cloud1,
-                                 pcl::PointCloud<pcl::PointXYZ> cloud2)
+MultiLidarCalibration::calibrate(pcl::PointCloud<pcl::PointXYZ>& cloud1,
+                                 pcl::PointCloud<pcl::PointXYZ>& cloud2)
 {
   if (target_frame_ != "")
     old_transform_ = getTransform(base_frame_, target_frame_);
