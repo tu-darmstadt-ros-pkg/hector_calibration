@@ -32,6 +32,8 @@
 #include <ceres/ceres.h>
 #include <pcl/point_types.h>
 
+#include <lidar_calibration_lib/lidar_calibration_common.h>
+
 namespace hector_calibration {
 
 namespace lidar_calibration {
