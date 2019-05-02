@@ -1,7 +1,10 @@
 <?xml version="1.0"?>
  
  <launch>
+   <!-- IMPORTANT: When recording data with the VLP-16, npacket has to be set to 1 in the driver -->
+   
    <!-- IMPORTANT: This is needed so scan data is in laser frame -->
+   <!-- You can set this in jasmine_2018_postproc_launch/launch/velocyne_postproc.launch -->
  <!-- <include file="$(find argo_tracker_bringup)/launch/laser_drivers/laser_drivers_vlp16_proc.launch">
     <arg name="transform_frame_id" value="vlp16_laser_frame" />
   </include>-->
