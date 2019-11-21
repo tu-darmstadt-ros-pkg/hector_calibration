@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
  <launch>  
   <node pkg="vigir_laserscan_to_pointcloud" type="laserscan_to_pointcloud_node" name="scan_to_clouds_pub_node" output="screen">
-    <remap from="/scan" to="/head_lidar/scan"/>
+    <remap from="/scan" to="/johnny5/sensor/head_lidar/scan"/>
     <remap from="/scan_cloud" to="/head_lidar/scan_cloud"/>
     <param name="use_high_fidelity_projection" value="true"/>
     <param name="target_frame" value="head_link_hokuyo_laser_frame"/>
