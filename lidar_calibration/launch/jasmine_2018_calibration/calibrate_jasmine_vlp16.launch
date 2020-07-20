@@ -4,22 +4,22 @@
    <!-- IMPORTANT: When recording data with the VLP-16, npacket has to be set to 1 in the driver -->
    
    <!-- IMPORTANT: This is needed so scan data is in laser frame -->
-   <!-- You can set this in jasmine_2018_postproc_launch/launch/velocyne_postproc.launch -->
- <!-- <include file="$(find argo_tracker_bringup)/launch/laser_drivers/laser_drivers_vlp16_proc.launch">
-    <arg name="transform_frame_id" value="vlp16_laser_frame" />
-  </include>-->
+   <!-- You can set this in jasmine_2018_postproc_launch/launch/velodyne_postproc.launch -->
+   <!-- <include file="$(find robot_driver_launch)/launch/lidar/velodyne_vlp_16_proc.launch"> -->
+   <!--   <arg name="transform_frame_id" value="vlp16_laser_frame" /> -->
+   <!-- </include>-->
   
   <!-- Laser Frame -->
-  <node pkg="tf" type="static_transform_publisher" name="vlp16_laser_frame_pub" args="0 0 0 0 -1.57 0 spin_lidar_lidar_mount_link vlp16_laser_frame 100" />
+  <node pkg="tf" type="static_transform_publisher" name="vlp16_laser_frame_pub" args="0 0 0 0 -1.57 0 spin_lidar_mount_link vlp16_laser_frame 100" />
   
   <!-- Actuator Frame -->
-  <node pkg="tf" type="static_transform_publisher" name="vlp16_actuator_frame_pub" args="0 0 0 0 -1.57 0 spin_lidar_lidar_mount_link_fixed vlp16_actuator_frame 100" />
+  <node pkg="tf" type="static_transform_publisher" name="vlp16_actuator_frame_pub" args="0 0 0 0 -1.57 0 spin_lidar_mount_link_fixed vlp16_actuator_frame 100" />
   
   <!-- Aggregator -->
    <node pkg="lidar_calibration" type="cloud_aggregator_node" name="cloud_aggregator_node" output="screen" ns="spin_laser">
-    <remap from="cloud" to="/scan_cloud_filtered"/>
+    <remap from="cloud" to="/spin_lidar/vlp16"/>
     <param name="target_frame" value="vlp16_actuator_frame"/>
-    <param name="rotations" value="2" />
+    <param name="rotations" value="3" />
   </node> 
   
   <!-- Calibration -->
@@ -28,8 +28,8 @@
     <param name="rotation_offset_pitch" value="-1.57"/>
     
     <!-- these have to be part of URDF (not just tf) -->
-    <param name="o_spin_frame" value="spin_lidar_lidar_mount_link"/> <!-- spinning frame -->
-    <param name="o_laser_frame" value="spin_lidar_pitch_hokuyo_laser_frame"/> <!-- laser frame-->
+    <param name="o_spin_frame" value="spin_lidar_mount_link"/> <!-- spinning frame -->
+    <param name="o_laser_frame" value="spin_lidar_laser_frame"/> <!-- laser frame-->
     <param name="tf_wait_duration" value="10"/>
      
     <param name="save_calibration" value="true"/> 
