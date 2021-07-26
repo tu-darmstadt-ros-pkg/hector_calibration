@@ -51,10 +51,10 @@ namespace hector_calibration {
 
 namespace lidar_calibration {
 
-typedef std::pair<boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ>>, double> pc_roll_tuple;
+typedef std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, double> pc_roll_tuple;
 
 /**
- * Subscribes to rotating LIDAR clouds and publishes and asssembles
+ * Subscribes to rotating LIDAR clouds and publishes and assembles
  * aggregated clouds 
  */
 class CalibrationCloudAggregator
@@ -87,7 +87,7 @@ protected:
   ros::ServiceServer request_scans_srv_;
   ros::ServiceServer reset_clouds_srv_;
 
-  boost::shared_ptr<tf::TransformListener> tfl_;
+  std::shared_ptr<tf::TransformListener> tfl_;
   ros::Duration wait_duration_;
 
   // bool p_use_high_fidelity_projection_;

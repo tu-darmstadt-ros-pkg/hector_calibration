@@ -100,6 +100,7 @@ bool LidarCalibration::loadOptionsFromParamServer() {
   double tf_wait_duration;
   pnh.param("tf_wait_duration", tf_wait_duration, 5.0);
   tf_wait_duration_ = ros::Duration(tf_wait_duration);
+  return true;
 }
 
 void LidarCalibration::setOptions(CalibrationOptions options) {

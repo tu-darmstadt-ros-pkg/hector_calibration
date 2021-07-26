@@ -125,7 +125,7 @@ namespace lidar_calibration {
       return;
     }
 
-    boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ> > pc;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pc;
     pc.reset(new pcl::PointCloud<pcl::PointXYZ>());
     pcl::fromROSMsg(*pc_msg, *pc);
 
