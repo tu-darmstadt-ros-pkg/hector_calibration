@@ -1,13 +1,16 @@
 <?xml version="1.0"?>
  
- <launch>
-   <!-- IMPORTANT: When recording data with the VLP-16, npacket has to be set to 1 in the driver -->
-   
-   <!-- IMPORTANT: This is needed so scan data is in laser frame -->
-   <!-- You can set this in drz_telemax_postproc_launch/launch/velodyne_postproc.launch -->
-   <!-- <include file="$(find robot_driver_launch)/launch/lidar/velodyne_vlp_16_proc.launch"> -->
-   <!--   <arg name="transform_frame_id" value="vlp16_laser_frame" /> -->
-   <!-- </include>-->
+<launch>
+    <!-- IMPORTANT: When recording data with the VLP-16, npacket has to be set to 1 in the driver -->
+
+    <!-- IMPORTANT: This is needed so scan data is in laser frame -->
+    <!-- You can set this in drz_telemax_postproc_launch/launch/velodyne_postproc.launch -->
+    <!--  
+          <include file="$(find velodyne_lidar_driver_launch)/launch/velodyne_vlp_16_proc.launch">
+            <arg name="manager" value="$(arg manager)" />
+            <arg name="target_frame" value="vlp16_laser_frame" /> 
+          </include>
+    -->
   
   <!-- Laser Frame -->
    <node pkg="tf" type="static_transform_publisher" name="vlp16_laser_frame_pub" args="0 0 0 0 -1.57 0 spin_lidar_mount_link vlp16_laser_frame 100" />
