@@ -16,7 +16,7 @@
   <depend>lidar_calibration_lib</depend>
   <depend>ceres_catkin</depend>
   
-  <exec_depend>tf2_ros</depend>
+  <exec_depend>tf2_ros</exec_depend>
   
   <export>
   </export>
