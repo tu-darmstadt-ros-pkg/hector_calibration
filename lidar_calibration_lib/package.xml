@@ -4,7 +4,7 @@
   <version>1.0.0</version>
   <description>The lidar_calibration_lib package</description>
 
-  <maintainer email="ros@martinoehler.de">Martin Oehler</maintainer>
+  <maintainer email="lichtenfeld@sim.tu-darmstadt.de">Jonathan Lichtenfeld</maintainer>
 
 
   <license>BSD</license>

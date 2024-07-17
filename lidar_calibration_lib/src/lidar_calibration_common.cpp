@@ -40,7 +40,7 @@ pcl::PointCloud<T> removeInvalidPoints(pcl::PointCloud<T>& cloud) {
       invalid_counter++;
     }
   }
-  ROS_INFO_STREAM("Removed " << invalid_counter << " invalid points");
+  // ROS_INFO_STREAM("Removed " << invalid_counter << " invalid points");
   return cleaned_cloud;
 }
 
@@ -63,17 +63,16 @@ void nanInfToZero(WeightedNormal& normal) {
   }
 }
 
-
-void publishCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud, const ros::Publisher& pub, std::string frame) {
-  sensor_msgs::PointCloud2 cloud_msg;
+void publishCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud, const rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr& pub, std::string frame, rclcpp::Node::SharedPtr node) {
+  sensor_msgs::msg::PointCloud2 cloud_msg;
   pcl::toROSMsg(cloud, cloud_msg);
-  publishCloud(cloud_msg, pub, frame);
+  publishCloud(cloud_msg, pub, frame, node);
 }
 
-void publishCloud(sensor_msgs::PointCloud2& cloud, const ros::Publisher& pub, std::string frame) {
+void publishCloud(sensor_msgs::msg::PointCloud2& cloud, const rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr& pub, std::string frame, rclcpp::Node::SharedPtr node) {
   cloud.header.frame_id = frame;
-  cloud.header.stamp = ros::Time::now();
-  pub.publish(cloud);
+  cloud.header.stamp = node->now();  //ros::Time::now();
+  pub->publish(cloud);
 }
 
 std::map<unsigned int, unsigned int>
@@ -98,31 +97,31 @@ findNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
       }
     }
   }
-  ROS_INFO_STREAM("Found " << mapping.size() << " neighbor matches.");
   return mapping;
 }
 
 void publishNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
                       const pcl::PointCloud<pcl::PointXYZ>& cloud2,
                       const std::map<unsigned int, unsigned int> &mapping,
-                      ros::Publisher& pub,
+                      const rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr& pub,
+                      rclcpp::Node::SharedPtr node,
                       std::string frame,
                       unsigned int number_of_markers)
 {
-  visualization_msgs::MarkerArray marker_array;
+  visualization_msgs::msg::MarkerArray marker_array;
   unsigned int step = floor(mapping.size() / number_of_markers);
   unsigned int id_cnt = 0;
   for (std::map<unsigned int, unsigned int>::const_iterator it = mapping.begin();
        it != mapping.end();
        safeAdvance<std::map<unsigned int, unsigned int>::const_iterator, unsigned int>(it, mapping.end(), step))
   {
-    visualization_msgs::Marker marker;
+    visualization_msgs::msg::Marker marker;
     marker.header.frame_id = frame;
-    marker.header.stamp = ros::Time::now();
+    marker.header.stamp = node->now();  //ros::Time::now();
     marker.ns = "neighbor_mapping";
     marker.id = id_cnt++;
-    marker.type = visualization_msgs::Marker::ARROW;
-    marker.action = visualization_msgs::Marker::ADD;
+    marker.type = visualization_msgs::msg::Marker::ARROW;
+    marker.action = visualization_msgs::msg::Marker::ADD;
 
     marker.scale.x = 0.01;
     marker.scale.y = 0.01;
@@ -132,8 +131,8 @@ void publishNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
     marker.color.g = 1.0;
     marker.color.b = 0.0;
 
-    geometry_msgs::Point point1;
-    geometry_msgs::Point point2;
+    geometry_msgs::msg::Point point1;
+    geometry_msgs::msg::Point point2;
 
     point1.x = (double) cloud1[it->first].x;
     point1.y = (double) cloud1[it->first].y;
@@ -146,7 +145,7 @@ void publishNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
     marker.points.push_back(point2);
     marker_array.markers.push_back(marker);
   }
-  pub.publish(marker_array);
+  pub->publish(marker_array);
 }
 
 std::vector<WeightedNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud, double radius)
@@ -195,50 +194,22 @@ std::vector<WeightedNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ>&
   return normals;
 }
 
-//void visualizeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud,
-//                     std::vector<WeightedNormal>& normals)
-//{
-//  pcl::PointCloud<pcl::Normal> pcl_normals;
-//  pcl_normals.resize(cloud.size());
-//  for (unsigned int i = 0; i < normals.size(); i++) {
-//    pcl::Normal pcl_normal(normals[i].normal(0), normals[i].normal(1), normals[i].normal(2));
-//    pcl_normals[i] = pcl_normal;
-//  }
-//  pcl::visualization::PCLVisualizer viewer;
-//  viewer.setBackgroundColor(0,0,0);
-
-//  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>());
-//  pcl::copyPointCloud(cloud, *cloud_ptr);
-//  viewer.addPointCloud<pcl::PointXYZ>(cloud_ptr, "Cloud");
-
-//  pcl::PointCloud<pcl::Normal>::Ptr normals_ptr(new pcl::PointCloud<pcl::Normal>());
-//  pcl::copyPointCloud(pcl_normals, *normals_ptr);
-//  viewer.addPointCloudNormals<pcl::PointXYZ, pcl::Normal>(cloud_ptr, normals_ptr, 10, 0.05, "Normals");
-//  viewer.addCoordinateSystem(1.0);
-//  viewer.initCameraParameters();
-//  ros::Rate rate(10);
-//  while (!viewer.wasStopped())
-//   {
-//     viewer.spinOnce (100);
-//     ros::spinOnce();
-//     rate.sleep();
-//   }
-//}
-
 void visualizePlanarity(const pcl::PointCloud<pcl::PointXYZ> &cloud,
                         const std::vector<WeightedNormal> &normals,
-                        ros::Publisher& pub,
-                        std::string frame)
+                        const rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr& pub,
+                        rclcpp::Node::SharedPtr node,
+                        std::string frame
+                        )
 {
   if (normals.size() != cloud.size()) {
-    ROS_ERROR_STREAM("Size of cloud (" << cloud.size() << ") doesn't match size of normals (" << normals.size() << ").");
+    RCLCPP_ERROR(node->get_logger(), "Size of cloud (%ld) doesn't match size of normals (%ld).", cloud.size(), normals.size());
     return;
   }
   double thres = 0.1;
   int id_cnt = 0;
 
   int step = 100;
-  visualization_msgs::MarkerArray marker_array;
+  visualization_msgs::msg::MarkerArray marker_array;
   for (unsigned int i = 0; i < normals.size(); i++) {
     if (normals[i].weight <= thres && normals[i].weight != 0) {
       if (step != 0) {
@@ -246,13 +217,13 @@ void visualizePlanarity(const pcl::PointCloud<pcl::PointXYZ> &cloud,
         continue;
       }
       step = 100;
-      visualization_msgs::Marker marker;
+      visualization_msgs::msg::Marker marker;
       marker.header.frame_id = frame;
-      marker.header.stamp = ros::Time::now();
+      marker.header.stamp = node->now();  //ros::Time::now();
       marker.ns = "planarity";
       marker.id = id_cnt++;
-      marker.type = visualization_msgs::Marker::ARROW;
-      marker.action = visualization_msgs::Marker::ADD;
+      marker.type = visualization_msgs::msg::Marker::ARROW;
+      marker.action = visualization_msgs::msg::Marker::ADD;
 
       marker.scale.x = 0.01;
       marker.scale.y = 0.01;
@@ -262,8 +233,8 @@ void visualizePlanarity(const pcl::PointCloud<pcl::PointXYZ> &cloud,
       marker.color.g = 0.0;
       marker.color.b = 1.0;
 
-      geometry_msgs::Point point1;
-      geometry_msgs::Point point2;
+      geometry_msgs::msg::Point point1;
+      geometry_msgs::msg::Point point2;
 
       point1.x = (double) cloud[i].x;
       point1.y = (double) cloud[i].y;
@@ -278,8 +249,8 @@ void visualizePlanarity(const pcl::PointCloud<pcl::PointXYZ> &cloud,
     }
 
   }
-  //ROS_INFO_STREAM("Drawing " << id_cnt << " normals.");
-  pub.publish(marker_array);
+  RCLCPP_INFO(node->get_logger(), "Drawing %d normals.", id_cnt);
+  pub->publish(marker_array);
 }
 
 }

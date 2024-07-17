@@ -2,7 +2,8 @@
 #define LIDAR_CALIBRATION_COMMON_H
 
 // pcl
-#include <pcl_ros/point_cloud.h>
+// #include <pcl_ros/point_cloud.hpp>
+#include <pcl_conversions/pcl_conversions.h>
 #include <pcl/common/transforms.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/search/kdtree.h>
@@ -13,9 +14,9 @@
 //#include <pcl/visualization/pcl_visualizer.h>
 
 // ros
-#include <ros/ros.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <visualization_msgs/MarkerArray.h>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 namespace hector_calibration {
 
@@ -42,20 +43,30 @@ namespace lidar_calibration {
   template <class Iter, class Incr> void safe_advance(Iter& curr, const Iter& end, Incr n);
   void nanInfToZero(WeightedNormal& normal);
 
-  void publishCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud, const ros::Publisher& pub, std::string frame);
-  void publishCloud(sensor_msgs::PointCloud2& cloud, const ros::Publisher& pub, std::string frame);
+  void publishCloud(const pcl::PointCloud<pcl::PointXYZ>& cloud, 
+                    const rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr& pub, 
+                    std::string frame, rclcpp::Node::SharedPtr node);
+  void publishCloud(sensor_msgs::msg::PointCloud2& cloud, 
+                    const rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr& pub, 
+                    std::string frame, rclcpp::Node::SharedPtr node);
 
 
   std::map<unsigned int, unsigned int> findNeighbors(const pcl::PointCloud<pcl::PointXYZ> &cloud1,
                                                      const pcl::PointCloud<pcl::PointXYZ> &cloud2, double max_sqr_dist = 0.1);
   void publishNeighbors(const pcl::PointCloud<pcl::PointXYZ>& cloud1,
                          const pcl::PointCloud<pcl::PointXYZ>& cloud2,
-                         const std::map<unsigned int, unsigned int>& mapping, ros::Publisher &pub, std::string frame, unsigned int number_of_markers = 100);
+                         const std::map<unsigned int, unsigned int>& mapping, 
+                         const rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr& pub,
+                         rclcpp::Node::SharedPtr node,
+                         std::string frame, 
+                         unsigned int number_of_markers = 100);
 
   std::vector<WeightedNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud, double radius = 0.07);
-//  void visualizeNormals(const pcl::PointCloud<pcl::PointXYZ>& cloud, std::vector<WeightedNormal> &normals);
-  void visualizePlanarity(const pcl::PointCloud<pcl::PointXYZ> &cloud, const std::vector<WeightedNormal> &normals, ros::Publisher &pub, std::string frame);
-
+  void visualizePlanarity(const pcl::PointCloud<pcl::PointXYZ> &cloud, 
+                          const std::vector<WeightedNormal> &normals, 
+                          const rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr& pub, 
+                          rclcpp::Node::SharedPtr node,
+                          std::string frame);
 }
 }
 
