@@ -4,16 +4,17 @@
   <version>0.0.1</version>
   <description>Package for calibration of two lidars against each other.</description>
 
-  <maintainer email="ros@martinoehler.de">Martin Oehler</maintainer>
+  <maintainer email="lichtenfeld@sim.tu-darmstadt.de">Jonathan lichtenfeld</maintainer>
 
   <license>BSD</license>
 
   <author email="ros@martinoehler.de">Martin Oehler</author> -->
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <depend>rclcpp</depend>
   <depend>lidar_calibration_lib</depend>
-  <depend>ceres_catkin</depend>
+  <depend>ceres</depend>
 
   <export>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>
