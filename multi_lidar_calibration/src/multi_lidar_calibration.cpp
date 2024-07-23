@@ -10,6 +10,7 @@ MultiLidarCalibration::MultiLidarCalibration()
     scan1_counter_(0),
     scan2_counter_(0),
     imu_counter_(0),
+    tf_published_(false),
     cloud1_msg_(std::make_shared<sensor_msgs::msg::PointCloud2>()),
     cloud2_msg_(std::make_shared<sensor_msgs::msg::PointCloud2>()),
     cloud1_prepr_msg_(std::make_shared<sensor_msgs::msg::PointCloud2>()),
@@ -83,9 +84,6 @@ MultiLidarCalibration::MultiLidarCalibration()
   lidar_frame1_ = "livox1";
   lidar_frame2_ = "livox2";
   publish_timer_ = this->create_wall_timer(1000ms, std::bind(&MultiLidarCalibration::publishClouds, this));
-  if (!use_imu_) {
-    this->publishTf();
-  }
 }
 
 void MultiLidarCalibration::cloudCb1(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
@@ -127,12 +125,9 @@ void MultiLidarCalibration::imuCb(const sensor_msgs::msg::Imu::SharedPtr msg)
   else {
     imu_ok_ = true;
     std::cout << "Received enough imu messages." << std::endl;
-    imu_sub_.reset();
-    this->publishTf();
+    imu_sub_.reset();    
     }
 }
-
-
 
 void MultiLidarCalibration::calibrate()
 {
@@ -188,6 +183,8 @@ void MultiLidarCalibration::calibrate()
       break;
     }
   }
+
+  calibration_ = calibration;
 
   std::cout << std::endl << "INITIAL GUESS" << std::endl;
   std::cout << printCalibration(init_guess_);
@@ -251,8 +248,10 @@ void MultiLidarCalibration::preprocessClouds()
 {
   this->cropCloud(cloud1_, crop_dist_);
   this->cropCloud(cloud2_, crop_dist_);
-  this->downsampleCloud(cloud1_, voxel_leaf_size_);
-  this->downsampleCloud(cloud2_, voxel_leaf_size_);
+  if (voxel_leaf_size_ > 0) {
+    this->downsampleCloud(cloud1_, voxel_leaf_size_);
+    this->downsampleCloud(cloud2_, voxel_leaf_size_);
+  }  
 }
 
 void MultiLidarCalibration::cropCloud(pcl::PointCloud<pcl::PointXYZ>& cloud, double distance)
@@ -335,7 +334,7 @@ MultiLidarCalibration::optimize(const pcl::PointCloud<pcl::PointXYZ> &cloud1,
       * Eigen::AngleAxisd(rotation[1], Eigen::Vector3d::UnitY())
       * Eigen::AngleAxisd(rotation[0], Eigen::Vector3d::UnitX())
   );
-  // calibration.translation() = Eigen::Vector3d(translation[0], translation[1], translation[2]);
+  calibration.translation() = Eigen::Vector3d(translation[0], translation[1], translation[2]);
 
   return calibration;
 }
@@ -388,10 +387,15 @@ void MultiLidarCalibration::publishClouds()
   if (!cloud2_result_msg_->data.empty()) {
     result_pub_->publish(*cloud2_result_msg_);
   }
+  if (!tf_published_ && imu_ok_) {
+    this->publishTf();
+    tf_published_ = true;
+  }
 }
 
 void MultiLidarCalibration::publishTf() {
 
+  // world -> lidar1
   tf2::Quaternion orientation;
 
   if (use_imu_ && imu_ok_) {
@@ -409,20 +413,40 @@ void MultiLidarCalibration::publishTf() {
     orientation.setRPY(0, 0, 0);
   }
 
-  geometry_msgs::msg::TransformStamped transform_stamped;
+  geometry_msgs::msg::TransformStamped tf_world_l1;
 
-  transform_stamped.header.stamp = this->get_clock()->now();
-  transform_stamped.header.frame_id = world_frame_;
-  transform_stamped.child_frame_id = lidar_frame1_;
-  transform_stamped.transform.translation.x = 0.0;
-  transform_stamped.transform.translation.y = 0.0;
-  transform_stamped.transform.translation.z = 0.0;
-  transform_stamped.transform.rotation.x = orientation.x();
-  transform_stamped.transform.rotation.y = orientation.y();
-  transform_stamped.transform.rotation.z = orientation.z();
-  transform_stamped.transform.rotation.w = orientation.w();
+  tf_world_l1.header.stamp = this->get_clock()->now();
+  tf_world_l1.header.frame_id = world_frame_;
+  tf_world_l1.child_frame_id = lidar_frame1_;
+  tf_world_l1.transform.translation.x = 0.0;
+  tf_world_l1.transform.translation.y = 0.0;
+  tf_world_l1.transform.translation.z = 0.0;
+  tf_world_l1.transform.rotation.x = orientation.x();
+  tf_world_l1.transform.rotation.y = orientation.y();
+  tf_world_l1.transform.rotation.z = orientation.z();
+  tf_world_l1.transform.rotation.w = orientation.w();
 
-  tf_static_broadcaster_->sendTransform(transform_stamped);
+  tf_static_broadcaster_->sendTransform(tf_world_l1);
+
+  // lidar1 -> lidar2
+  //Eigen::Affine3d calibration_lidar1_to_lidar2 = calibration_.inverse();
+  
+  geometry_msgs::msg::TransformStamped tf_l1_l2;
+  tf_l1_l2.header.stamp = this->get_clock()->now();
+  tf_l1_l2.header.frame_id = lidar_frame1_;
+  tf_l1_l2.child_frame_id = lidar_frame2_;
+  tf_l1_l2.transform.translation.x = calibration_.translation().x();
+  tf_l1_l2.transform.translation.y = calibration_.translation().y();
+  tf_l1_l2.transform.translation.z = calibration_.translation().z();
+  Eigen::Quaterniond q(calibration_.linear());
+  tf_l1_l2.transform.rotation.x = q.x();
+  tf_l1_l2.transform.rotation.y = q.y();
+  tf_l1_l2.transform.rotation.z = q.z();
+  tf_l1_l2.transform.rotation.w = q.w();
+
+  tf_static_broadcaster_->sendTransform(tf_l1_l2);
+
+
 }
 
 bool MultiLidarCalibration::saveToDisk(std::string path, const Eigen::Affine3d& calibration) const {

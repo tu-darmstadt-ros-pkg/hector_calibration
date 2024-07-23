@@ -91,12 +91,14 @@ private:
   std::string save_path_;
   bool use_imu_;
   bool imu_ok_;
+  bool tf_published_;
 
   std::string world_frame_;
   std::string lidar_frame1_;
   std::string lidar_frame2_;
   Eigen::Affine3d init_guess_;
   Eigen::Affine3d old_transform_;
+  Eigen::Affine3d calibration_;
 
   double max_sqr_dist_;
   unsigned int neighbor_mapping_vis_count_;

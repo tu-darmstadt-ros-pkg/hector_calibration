@@ -15,7 +15,7 @@ def generate_launch_description():
     )
 
     init_guess_xyz_arg = DeclareLaunchArgument(
-        'init_guess_xyz', default_value='[0.0, -300.0, 0.0]', description='Initial guess for x, y, z in mm'
+        'init_guess_xyz', default_value='[0.0, -0.0, 0.0]', description='Initial guess for x, y, z in mm'
     )
 
     min_scans_arg = DeclareLaunchArgument(
@@ -34,7 +34,7 @@ def generate_launch_description():
         'crop_dist', default_value='1.0'
     )
     voxel_leaf_size_arg = DeclareLaunchArgument(
-        'voxel_leaf_size', default_value='0.1'
+        'voxel_leaf_size', default_value='0.10', description='Voxel grid leaf size [m] for downsampling point clouds. 0 means no downsampling'
     )
     max_iterations_arg = DeclareLaunchArgument(
         'max_iterations', default_value='20'
