@@ -1,6 +1,6 @@
 # Hector Calibration - Multi Lidar Calibration
 
-This package provides a tool for mutually calibrating two livox sensors. 
+This package provides a tool for mutually calibrating two lidar sensors. 
 
 The nodes subscribes to two point cloud topics. The (accumulated) cloud from topic 2 is then registered with the (accumulated) cloud from topic 1.
 As a result you will get the transform from the first to second frame.
